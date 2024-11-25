@@ -20,6 +20,7 @@
         :root {
             --primary-color: #1a2a6c;
             --secondary-color: #b21f1f;
+            --accent-color: #fdbb2d;
             --success-color: #28a745;
             --danger-color: #dc3545;
             --warning-color: #ffc107;
@@ -172,6 +173,57 @@
             width: 3rem;
             height: 3rem;
         }
+        
+        .btn-prediction {
+            background: white;
+            color: var(--primary-color);
+            font-weight: 600;
+            padding: 0.8rem 1.5rem;
+            border-radius: 12px;
+            border: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .btn-prediction:hover {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+
+        .btn-prediction i {
+            margin-right: 0.5rem;
+        }
+
+        .dropdown-menu {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+            padding: 0.8rem 0;
+            margin-top: 0.5rem;
+        }
+
+        .dropdown-item {
+            padding: 0.8rem 1.2rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .dropdown-item:hover {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+        }
+
+        .dropdown-item:hover i {
+            color: white;
+        }
+
+        .dropdown-item i {
+            width: 1.5rem;
+            color: var(--primary-color);
+            transition: all 0.2s ease;
+        }
     </style>
     
     {% block styles %}{% endblock %}
@@ -203,7 +255,7 @@
                 </ul>
                 {% if current_user.is_authenticated %}
                 <div class="d-flex align-items-center">
-                    <a href="{{ url_for('main.matches') }}" class="btn btn-primary me-3">
+                    <a href="{{ url_for('main.matches') }}" class="btn btn-prediction me-3">
                         <i class="fas fa-chart-line me-1"></i>Make Prediction
                     </a>
                     <div class="dropdown">
