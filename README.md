@@ -42,6 +42,28 @@ A modern, AI-powered sports analytics platform built with Flask, featuring real-
 - 🔄 RESTful API
 - 📈 Machine Learning Integration
 
+## 📸 Screenshots
+
+### Landing Page
+![Landing Page](docs/images/landing-page.png)
+*Modern landing page with glassmorphism design and interactive elements*
+
+### Match Predictions
+![Match Predictions](docs/images/predictions.png)
+*AI-powered match prediction interface with detailed statistics*
+
+### Live Matches
+![Live Matches](docs/images/live-matches.png)
+*Real-time match tracking with live updates and statistics*
+
+### User Dashboard
+![User Dashboard](docs/images/dashboard.png)
+*Personalized dashboard showing user predictions and analytics*
+
+### Analytics View
+![Analytics](docs/images/analytics.png)
+*Comprehensive analytics with interactive charts and insights*
+
 ## 🚀 Quick Start
 
 ### Prerequisites
