@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% block title %}Match Predictions{% endblock %}
+
 {% block styles %}
 <style>
     /* Enhanced Gradient Backgrounds */
@@ -56,32 +58,6 @@
         font-size: 1.25rem;
     }
 
-    .filter-title i {
-        background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin-right: 0.75rem;
-    }
-
-    .form-select {
-        border-radius: 12px;
-        border: 1px solid rgba(99, 102, 241, 0.2);
-        padding: 0.75rem 1rem;
-        font-size: 0.95rem;
-        transition: all 0.3s ease;
-    }
-
-    .form-select:focus {
-        border-color: #6366F1;
-        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-    }
-
-    .form-label {
-        color: #4B5563;
-        font-weight: 600;
-        margin-bottom: 0.5rem;
-    }
-
     /* Enhanced Prediction Cards */
     .prediction-card {
         background: white;
@@ -104,23 +80,6 @@
         color: white;
         padding: 1.5rem;
         position: relative;
-    }
-
-    .prediction-header::after {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: linear-gradient(90deg, #6366F1, #4F46E5, #6366F1);
-        background-size: 200% 100%;
-        animation: gradient-shift 3s linear infinite;
-    }
-
-    @keyframes gradient-shift {
-        0% { background-position: 0% 0%; }
-        100% { background-position: 200% 0%; }
     }
 
     .prediction-body {
@@ -238,40 +197,7 @@
         text-align: center;
     }
 
-    .btn-primary {
-        background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
-        border: none;
-        padding: 0.75rem 2rem;
-        font-weight: 600;
-        border-radius: 12px;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 6px rgba(99, 102, 241, 0.2);
-    }
-
-    .btn-primary:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 12px rgba(99, 102, 241, 0.3);
-        background: linear-gradient(135deg, #4F46E5 0%, #4338CA 100%);
-    }
-
-    .alert-info {
-        background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(79, 70, 229, 0.1) 100%);
-        border: 1px solid rgba(99, 102, 241, 0.2);
-        color: #4F46E5;
-        border-radius: 15px;
-        padding: 1.5rem;
-        display: flex;
-        align-items: center;
-        font-weight: 500;
-    }
-
-    .alert-info i {
-        font-size: 1.5rem;
-        margin-right: 1rem;
-        color: #6366F1;
-    }
-
-    /* Responsive Design Improvements */
+    /* Responsive Design */
     @media (max-width: 768px) {
         .page-header {
             padding: 2rem 0;
@@ -303,26 +229,14 @@
             font-size: 1.1rem;
         }
     }
-
-    /* Loading Animation */
-    @keyframes shimmer {
-        0% { background-position: -1000px 0; }
-        100% { background-position: 1000px 0; }
-    }
-
-    .loading {
-        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-        background-size: 1000px 100%;
-        animation: shimmer 2s infinite linear;
-    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="page-header">
+<div class="page-header text-center">
     <div class="container">
-        <h1 class="mb-0">Match Predictions</h1>
-        <p class="mb-0 mt-2 text-light">AI-powered predictions for upcoming matches</p>
+        <h1>Match Predictions</h1>
+        <p>AI-powered predictions for upcoming matches</p>
     </div>
 </div>
 
@@ -331,10 +245,10 @@
         <h5 class="filter-title">
             <i class="fas fa-filter me-2"></i>Filter Predictions
         </h5>
-        <form method="get" class="row g-3">
+        <form method="GET" class="row g-3">
             <div class="col-md-4">
-                <label class="form-label">Sport</label>
-                <select name="sport" class="form-select">
+                <label for="sport" class="form-label">Sport</label>
+                <select class="form-select" id="sport" name="sport">
                     <option value="">All Sports</option>
                     {% for sport in sports %}
                     <option value="{{ sport.id }}" {% if selected_sport == sport.id %}selected{% endif %}>
@@ -344,8 +258,8 @@
                 </select>
             </div>
             <div class="col-md-4">
-                <label class="form-label">League</label>
-                <select name="league" class="form-select">
+                <label for="league" class="form-label">League</label>
+                <select class="form-select" id="league" name="league">
                     <option value="">All Leagues</option>
                     {% for league in leagues %}
                     <option value="{{ league.id }}" {% if selected_league == league.id %}selected{% endif %}>
@@ -355,13 +269,16 @@
                 </select>
             </div>
             <div class="col-md-4">
-                <label class="form-label">Confidence Level</label>
-                <select name="confidence" class="form-select">
+                <label for="confidence" class="form-label">Confidence Level</label>
+                <select class="form-select" id="confidence" name="confidence">
                     <option value="">All Levels</option>
-                    <option value="high" {% if selected_confidence == 'high' %}selected{% endif %}>High Confidence</option>
-                    <option value="medium" {% if selected_confidence == 'medium' %}selected{% endif %}>Medium Confidence</option>
-                    <option value="low" {% if selected_confidence == 'low' %}selected{% endif %}>Low Confidence</option>
+                    <option value="high" {% if selected_confidence == 'high' %}selected{% endif %}>High</option>
+                    <option value="medium" {% if selected_confidence == 'medium' %}selected{% endif %}>Medium</option>
+                    <option value="low" {% if selected_confidence == 'low' %}selected{% endif %}>Low</option>
                 </select>
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary">Apply Filters</button>
             </div>
         </form>
     </div>
@@ -376,16 +293,9 @@
                             <div class="small">{{ match.sport.name }} - {{ match.league.name }}</div>
                             <div>{{ match.start_time.strftime('%d %b %Y, %H:%M') }}</div>
                         </div>
-                        {% if prediction_confidence is defined %}
-                        {% set confidence = prediction_confidence(match) %}
-                        <span class="confidence-badge confidence-{{ confidence }}">
-                            {{ confidence.upper() }} CONFIDENCE
+                        <span class="confidence-badge confidence-{{ match.confidence }}">
+                            {{ match.confidence }} confidence
                         </span>
-                        {% else %}
-                        <span class="confidence-badge confidence-medium">
-                            MEDIUM CONFIDENCE
-                        </span>
-                        {% endif %}
                     </div>
                 </div>
                 <div class="prediction-body">
@@ -447,9 +357,9 @@
                         </div>
                     </div>
                 </div>
-                <div class="prediction-footer text-center">
-                    <button class="btn btn-primary" onclick="showPredictionDetails({{ match.id }})">
-                        <i class="fas fa-chart-line me-2"></i>View Detailed Analysis
+                <div class="prediction-footer">
+                    <button class="btn btn-primary" onclick="showPredictionDetails('{{ match.id }}')">
+                        View Full Analysis
                     </button>
                 </div>
             </div>
@@ -461,19 +371,9 @@
 
 {% block scripts %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Auto-submit form when filters change
-        const filterSelects = document.querySelectorAll('select');
-        filterSelects.forEach(select => {
-            select.addEventListener('change', () => {
-                select.closest('form').submit();
-            });
-        });
-    });
-
-    function showPredictionDetails(matchId) {
-        // Implement prediction details modal
-        alert('Detailed prediction analysis coming soon!');
-    }
+function showPredictionDetails(matchId) {
+    // TODO: Implement prediction details modal
+    console.log('Show prediction details for match:', matchId);
+}
 </script>
 {% endblock %}
