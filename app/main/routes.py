@@ -852,6 +852,103 @@ def create_analysis(match_id):
         flash('An error occurred while saving your analysis.', 'error')
         return redirect(url_for('main.analysis'))
 
+@bp.route('/predictions')
+@login_required
+def predictions():
+    sport_id = request.args.get('sport', type=int)
+    league_id = request.args.get('league', type=int)
+    confidence = request.args.get('confidence')
+    
+    query = Match.query.filter(Match.start_time > datetime.utcnow())
+    
+    if sport_id:
+        query = query.filter(Match.sport_id == sport_id)
+    if league_id:
+        query = query.filter(Match.league_id == league_id)
+        
+    matches = query.order_by(Match.start_time).all()
+    
+    # Filter by confidence if specified
+    if confidence:
+        matches = [m for m in matches if prediction_confidence(m) == confidence]
+    
+    return render_template('main/predictions.html',
+                         matches=matches,
+                         sports=Sport.query.all(),
+                         leagues=League.query.all(),
+                         selected_sport=sport_id,
+                         selected_league=league_id,
+                         selected_confidence=confidence)
+
+@bp.route('/team-stats')
+@login_required
+def team_stats():
+    sport_id = request.args.get('sport', type=int)
+    league_id = request.args.get('league', type=int)
+    team_id = request.args.get('team', type=int)
+    
+    # Build team query based on filters
+    team_query = Team.query
+    if sport_id:
+        team_query = team_query.join(League).filter(League.sport_id == sport_id)
+    if league_id:
+        team_query = team_query.filter(Team.league_id == league_id)
+    
+    # Get selected team if specified
+    selected_team = None
+    if team_id:
+        selected_team = Team.query.get_or_404(team_id)
+        
+        # Calculate team statistics
+        matches = Match.query.filter(
+            or_(Match.home_team_id == team_id, Match.away_team_id == team_id)
+        ).order_by(Match.start_time.desc()).all()
+        
+        # Add statistics to team object
+        selected_team.matches_played = len(matches)
+        selected_team.wins = sum(1 for m in matches if 
+            (m.home_team_id == team_id and m.home_score > m.away_score) or
+            (m.away_team_id == team_id and m.away_score > m.home_score))
+        selected_team.draws = sum(1 for m in matches if m.home_score == m.away_score)
+        selected_team.losses = selected_team.matches_played - selected_team.wins - selected_team.draws
+        
+        # Calculate percentages
+        selected_team.win_rate = round((selected_team.wins / selected_team.matches_played) * 100 if selected_team.matches_played > 0 else 0)
+        
+        # Get recent matches
+        selected_team.recent_matches = []
+        for match in matches[:5]:  # Last 5 matches
+            result = {}
+            if match.home_team_id == team_id:
+                result['opponent'] = match.away_team.name
+                result['score'] = f"{match.home_score}-{match.away_score}"
+                if match.home_score > match.away_score:
+                    result['result'] = 'WIN'
+                elif match.home_score < match.away_score:
+                    result['result'] = 'LOSS'
+                else:
+                    result['result'] = 'DRAW'
+            else:
+                result['opponent'] = match.home_team.name
+                result['score'] = f"{match.away_score}-{match.home_score}"
+                if match.away_score > match.home_score:
+                    result['result'] = 'WIN'
+                elif match.away_score < match.home_score:
+                    result['result'] = 'LOSS'
+                else:
+                    result['result'] = 'DRAW'
+            result['date'] = match.start_time
+            selected_team.recent_matches.append(result)
+    
+    return render_template('main/team_stats.html',
+                         sports=Sport.query.all(),
+                         leagues=League.query.all(),
+                         teams=team_query.all(),
+                         team=selected_team,
+                         selected_sport=sport_id,
+                         selected_league=league_id,
+                         selected_team=team_id)
+
 @bp.context_processor
 def utility_processor():
     """Add utility functions and variables to template context"""

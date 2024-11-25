@@ -1,0 +1,360 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%);
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+        color: white;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .stats-card {
+        background: white;
+        border-radius: 15px;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+    }
+
+    .stats-header {
+        background: linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%);
+        color: white;
+        padding: 1.5rem;
+        position: relative;
+    }
+
+    .team-logo {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: white;
+        padding: 8px;
+        margin-right: 1rem;
+    }
+
+    .team-info h3 {
+        margin: 0;
+        font-size: 1.5rem;
+    }
+
+    .team-info p {
+        margin: 0;
+        opacity: 0.9;
+    }
+
+    .stats-body {
+        padding: 1.5rem;
+    }
+
+    .stat-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .stat-row:last-child {
+        border-bottom: none;
+    }
+
+    .stat-label {
+        color: #6c757d;
+        font-weight: 500;
+    }
+
+    .stat-value {
+        font-weight: 600;
+        color: #2c3e50;
+        font-size: 1.1rem;
+    }
+
+    .progress-stats {
+        padding: 1.5rem;
+        background: #f8f9fa;
+    }
+
+    .progress-bar-wrapper {
+        margin: 1rem 0;
+    }
+
+    .progress-label {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+        color: #495057;
+        font-weight: 500;
+    }
+
+    .progress-custom {
+        height: 8px;
+        background: #e9ecef;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #FF416C 0%, #FF4B2B 100%);
+        border-radius: 4px;
+        transition: width 0.3s ease;
+    }
+
+    .performance-chart {
+        padding: 1.5rem;
+        height: 300px;
+    }
+
+    .recent-matches {
+        padding: 1.5rem;
+    }
+
+    .match-result {
+        display: flex;
+        align-items: center;
+        padding: 0.8rem;
+        border-radius: 10px;
+        margin-bottom: 0.8rem;
+        background: #f8f9fa;
+    }
+
+    .result-badge {
+        padding: 0.3rem 0.8rem;
+        border-radius: 15px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-right: 1rem;
+        min-width: 70px;
+        text-align: center;
+    }
+
+    .win {
+        background: #28a745;
+        color: white;
+    }
+
+    .loss {
+        background: #dc3545;
+        color: white;
+    }
+
+    .draw {
+        background: #ffc107;
+        color: #212529;
+    }
+
+    .filter-section {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        margin-bottom: 2rem;
+    }
+
+    .filter-title {
+        color: #FF416C;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+    }
+
+    .stats-footer {
+        background: #f8f9fa;
+        padding: 1rem;
+        border-top: 1px solid rgba(0,0,0,0.05);
+        text-align: center;
+    }
+
+    .ranking-badge {
+        background: #FF416C;
+        color: white;
+        padding: 0.3rem 0.8rem;
+        border-radius: 15px;
+        font-weight: 600;
+        margin-left: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1 class="mb-0">Team Statistics</h1>
+        <p class="mb-0 mt-2 text-light">Comprehensive team performance analysis</p>
+    </div>
+</div>
+
+<div class="container">
+    <div class="filter-section">
+        <h5 class="filter-title">
+            <i class="fas fa-filter me-2"></i>Select Team
+        </h5>
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Sport</label>
+                <select name="sport" class="form-select">
+                    <option value="">All Sports</option>
+                    {% for sport in sports %}
+                    <option value="{{ sport.id }}" {% if selected_sport == sport.id %}selected{% endif %}>
+                        {{ sport.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">League</label>
+                <select name="league" class="form-select">
+                    <option value="">All Leagues</option>
+                    {% for league in leagues %}
+                    <option value="{{ league.id }}" {% if selected_league == league.id %}selected{% endif %}>
+                        {{ league.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Team</label>
+                <select name="team" class="form-select">
+                    <option value="">Select Team</option>
+                    {% for team in teams %}
+                    <option value="{{ team.id }}" {% if selected_team == team.id %}selected{% endif %}>
+                        {{ team.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </form>
+    </div>
+
+    {% if selected_team %}
+    <div class="stats-card">
+        <div class="stats-header">
+            <div class="d-flex align-items-center">
+                <img src="{{ team.logo_url }}" alt="{{ team.name }}" class="team-logo">
+                <div class="team-info">
+                    <h3>{{ team.name }}</h3>
+                    <p>{{ team.league.name }}</p>
+                </div>
+                <div class="ms-auto">
+                    <span class="ranking-badge">
+                        Rank #{{ team.league_position }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="stat-row">
+                        <span class="stat-label">Matches Played</span>
+                        <span class="stat-value">{{ team.matches_played }}</span>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-row">
+                        <span class="stat-label">Wins</span>
+                        <span class="stat-value">{{ team.wins }}</span>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-row">
+                        <span class="stat-label">Draws</span>
+                        <span class="stat-value">{{ team.draws }}</span>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-row">
+                        <span class="stat-label">Losses</span>
+                        <span class="stat-value">{{ team.losses }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="progress-stats">
+            <h5>Performance Metrics</h5>
+            <div class="progress-bar-wrapper">
+                <div class="progress-label">
+                    <span>Win Rate</span>
+                    <span>{{ team.win_rate }}%</span>
+                </div>
+                <div class="progress-custom">
+                    <div class="progress-fill" style="width: {{ team.win_rate }}%"></div>
+                </div>
+            </div>
+            <div class="progress-bar-wrapper">
+                <div class="progress-label">
+                    <span>Goals Scored</span>
+                    <span>{{ team.goals_scored }}</span>
+                </div>
+                <div class="progress-custom">
+                    <div class="progress-fill" style="width: {{ team.goals_percentage }}%"></div>
+                </div>
+            </div>
+            <div class="progress-bar-wrapper">
+                <div class="progress-label">
+                    <span>Clean Sheets</span>
+                    <span>{{ team.clean_sheets }}</span>
+                </div>
+                <div class="progress-custom">
+                    <div class="progress-fill" style="width: {{ team.clean_sheet_percentage }}%"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="recent-matches">
+            <h5>Recent Matches</h5>
+            {% for match in team.recent_matches %}
+            <div class="match-result">
+                <span class="result-badge {{ match.result.lower() }}">
+                    {{ match.result }}
+                </span>
+                <div>
+                    <div>{{ match.opponent }}</div>
+                    <small class="text-muted">{{ match.score }} - {{ match.date.strftime('%d %b %Y') }}</small>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="stats-footer">
+            <button class="btn btn-primary" onclick="showFullStats({{ team.id }})">
+                <i class="fas fa-chart-bar me-2"></i>View Full Statistics
+            </button>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i>
+        Please select a team to view their statistics.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-submit form when filters change
+        const filterSelects = document.querySelectorAll('select');
+        filterSelects.forEach(select => {
+            select.addEventListener('change', () => {
+                select.closest('form').submit();
+            });
+        });
+    });
+
+    function showFullStats(teamId) {
+        // Implement full statistics view
+        alert('Full team statistics coming soon!');
+    }
+</script>
+{% endblock %}
