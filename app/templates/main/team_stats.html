@@ -311,7 +311,7 @@
         <form method="get" class="row g-4">
             <div class="col-md-4">
                 <label class="form-label">Sport</label>
-                <select name="sport" class="form-select">
+                <select id="sport" name="sport" class="form-select">
                     <option value="">All Sports</option>
                     {% for sport in sports %}
                     <option value="{{ sport.id }}" {% if selected_sport == sport.id %}selected{% endif %}>
@@ -322,7 +322,7 @@
             </div>
             <div class="col-md-4">
                 <label class="form-label">League</label>
-                <select name="league" class="form-select">
+                <select id="league" name="league" class="form-select">
                     <option value="">All Leagues</option>
                     {% for league in leagues %}
                     <option value="{{ league.id }}" {% if selected_league == league.id %}selected{% endif %}>
@@ -333,7 +333,7 @@
             </div>
             <div class="col-md-4">
                 <label class="form-label">Team</label>
-                <select name="team" class="form-select">
+                <select id="team" name="team" class="form-select">
                     <option value="">Select Team</option>
                     {% for team in teams %}
                     <option value="{{ team.id }}" {% if selected_team == team.id %}selected{% endif %}>
@@ -451,29 +451,72 @@
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Auto-submit form when filters change
-        const filterSelects = document.querySelectorAll('select');
-        filterSelects.forEach(select => {
-            select.addEventListener('change', () => {
-                select.closest('form').submit();
-            });
+        const sportSelect = document.getElementById('sport');
+        const leagueSelect = document.getElementById('league');
+        const teamSelect = document.getElementById('team');
+
+        sportSelect.addEventListener('change', function() {
+            const sportId = this.value;
+            // Reset other selects
+            leagueSelect.innerHTML = '<option value="">Select League</option>';
+            teamSelect.innerHTML = '<option value="">Select Team</option>';
+            
+            if (sportId) {
+                // Load leagues
+                fetch(`/get_leagues?sport_id=${sportId}`)
+                    .then(response => response.json())
+                    .then(leagues => {
+                        leagues.forEach(league => {
+                            leagueSelect.innerHTML += `<option value="${league.id}">${league.name}</option>`;
+                        });
+                    });
+                
+                // Load all teams for this sport
+                fetch(`/api/teams?sport_id=${sportId}`)
+                    .then(response => response.json())
+                    .then(teams => {
+                        teams.forEach(team => {
+                            teamSelect.innerHTML += `<option value="${team.id}">${team.name}</option>`;
+                        });
+                    });
+            }
         });
 
-        // Animate progress bars on scroll
+        leagueSelect.addEventListener('change', function() {
+            const leagueId = this.value;
+            teamSelect.innerHTML = '<option value="">Select Team</option>';
+            
+            if (leagueId) {
+                fetch(`/api/teams?league_id=${leagueId}`)
+                    .then(response => response.json())
+                    .then(teams => {
+                        teams.forEach(team => {
+                            teamSelect.innerHTML += `<option value="${team.id}">${team.name}</option>`;
+                        });
+                    });
+            }
+        });
+
+        teamSelect.addEventListener('change', function() {
+            const teamId = this.value;
+            if (teamId) {
+                window.location.href = `/team-stats?team=${teamId}`;
+            }
+        });
+
+        // Progress bar animation
+        const progressBars = document.querySelectorAll('.progress-fill');
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
-                    entry.target.style.width = entry.target.getAttribute('data-width');
+                    const target = entry.target;
+                    const width = target.getAttribute('data-width');
+                    target.style.width = width + '%';
                 }
             });
-        });
+        }, { threshold: 0.1 });
 
-        document.querySelectorAll('.progress-fill').forEach(bar => {
-            const width = bar.style.width;
-            bar.style.width = '0';
-            bar.setAttribute('data-width', width);
-            observer.observe(bar);
-        });
+        progressBars.forEach(bar => observer.observe(bar));
     });
 
     function showFullStats(teamId) {

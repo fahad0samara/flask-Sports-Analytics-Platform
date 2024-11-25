@@ -300,13 +300,29 @@ def head_to_head():
     sports = Sport.query.all()
     return render_template('main/head_to_head.html', sports=sports)
 
+@bp.route('/api/teams', defaults={'sport_id': None})
 @bp.route('/api/teams/<int:sport_id>')
 @login_required
-def get_teams(sport_id):
-    teams = Team.query.filter_by(sport_id=sport_id).all()
+def get_teams(sport_id=None):
+    """Get teams filtered by sport or league"""
+    # If sport_id is not in URL, try to get it from query params
+    if sport_id is None:
+        sport_id = request.args.get('sport_id', type=int)
+    league_id = request.args.get('league_id', type=int)
+    
+    # Build query based on filters
+    query = Team.query
+    
+    if sport_id:
+        query = query.join(League).filter(League.sport_id == sport_id)
+    if league_id:
+        query = query.filter(Team.league_id == league_id)
+        
+    teams = query.order_by(Team.name).all()
     return jsonify([{
         'id': team.id,
-        'name': team.name
+        'name': team.name,
+        'logo_url': team.logo_url
     } for team in teams])
 
 @bp.route('/api/head-to-head', methods=['POST'])
@@ -1068,6 +1084,20 @@ def predict_match(match_id):
                          match=match,
                          title=f"Predict: {match.home_team.name} vs {match.away_team.name}")
 
+@bp.route('/get_leagues')
+@login_required
+def get_leagues():
+    """Get leagues for a specific sport"""
+    sport_id = request.args.get('sport_id', type=int)
+    if not sport_id:
+        return jsonify([])
+    
+    leagues = League.query.filter_by(sport_id=sport_id).all()
+    return jsonify([{
+        'id': league.id,
+        'name': league.name
+    } for league in leagues])
+
 @bp.context_processor
 def utility_processor():
     """Add utility functions and variables to template context"""
@@ -1169,3 +1199,161 @@ def get_paginated_news(page=1, sport=None, search=None):
     return query.order_by(News.created_at.desc()).paginate(
         page=page, per_page=per_page, error_out=False
     )
+
+def calculate_team_form(team):
+    """Calculate team's recent form and detailed performance metrics"""
+    matches = Match.query.filter(
+        or_(Match.home_team_id == team.id, Match.away_team_id == team.id)
+    ).order_by(Match.start_time.desc()).limit(10).all()
+    
+    form = []
+    total_goals_scored = 0
+    total_goals_conceded = 0
+    wins = 0
+    draws = 0
+    losses = 0
+    
+    for match in matches:
+        if match.home_team_id == team.id:
+            goals_scored = match.home_score
+            goals_conceded = match.away_score
+        else:
+            goals_scored = match.away_score
+            goals_conceded = match.home_score
+            
+        total_goals_scored += goals_scored
+        total_goals_conceded += goals_conceded
+        
+        if match.winner_id == team.id:
+            form.append('W')
+            wins += 1
+        elif match.winner_id is None:
+            form.append('D')
+            draws += 1
+        else:
+            form.append('L')
+            losses += 1
+    
+    matches_played = len(matches)
+    win_rate = (wins / matches_played * 100) if matches_played > 0 else 0
+    goals_per_game = total_goals_scored / matches_played if matches_played > 0 else 0
+    conceded_per_game = total_goals_conceded / matches_played if matches_played > 0 else 0
+    
+    return {
+        'form_string': ''.join(form),
+        'last_10': {
+            'wins': wins,
+            'draws': draws,
+            'losses': losses,
+            'win_rate': win_rate,
+            'goals_scored': total_goals_scored,
+            'goals_conceded': total_goals_conceded,
+            'goals_per_game': goals_per_game,
+            'conceded_per_game': conceded_per_game
+        }
+    }
+
+def calculate_league_position_trend(team):
+    """Calculate team's league position trend and performance metrics"""
+    # Get all teams in the same league
+    teams = Team.query.filter_by(league_id=team.league_id).all()
+    
+    # Calculate stats for each team
+    team_stats = []
+    for t in teams:
+        matches = Match.query.filter(
+            or_(Match.home_team_id == t.id, Match.away_team_id == t.id),
+            Match.status == 'finished'
+        ).all()
+        
+        points = 0
+        goals_scored = 0
+        goals_conceded = 0
+        
+        for match in matches:
+            if match.home_team_id == t.id:
+                goals_scored += match.home_score
+                goals_conceded += match.away_score
+                if match.winner_id == t.id:
+                    points += 3
+                elif match.winner_id is None:
+                    points += 1
+            else:
+                goals_scored += match.away_score
+                goals_conceded += match.home_score
+                if match.winner_id == t.id:
+                    points += 3
+                elif match.winner_id is None:
+                    points += 1
+        
+        team_stats.append({
+            'team': t,
+            'points': points,
+            'goals_scored': goals_scored,
+            'goals_conceded': goals_conceded,
+            'goal_difference': goals_scored - goals_conceded
+        })
+    
+    # Sort teams by points, then goal difference
+    team_stats.sort(key=lambda x: (-x['points'], -x['goal_difference']))
+    
+    # Find current team's position
+    current_position = next(i for i, t in enumerate(team_stats) if t['team'].id == team.id) + 1
+    
+    return {
+        'position': current_position,
+        'total_teams': len(teams),
+        'points': next(t['points'] for t in team_stats if t['team'].id == team.id),
+        'points_from_top': team_stats[0]['points'] - team_stats[current_position - 1]['points'],
+        'points_from_bottom': team_stats[current_position - 1]['points'] - team_stats[-1]['points'],
+        'goal_difference': next(t['goal_difference'] for t in team_stats if t['team'].id == team.id)
+    }
+
+def calculate_goal_statistics(team):
+    """Calculate comprehensive goal statistics"""
+    home_matches = Match.query.filter(
+        Match.home_team_id == team.id,
+        Match.status == 'finished'
+    ).all()
+    
+    away_matches = Match.query.filter(
+        Match.away_team_id == team.id,
+        Match.status == 'finished'
+    ).all()
+    
+    goals_scored = sum(m.home_score for m in home_matches) + sum(m.away_score for m in away_matches)
+    goals_conceded = sum(m.away_score for m in home_matches) + sum(m.home_score for m in away_matches)
+    
+    clean_sheets = sum(1 for m in home_matches if m.away_score == 0) + sum(1 for m in away_matches if m.home_score == 0)
+    failed_to_score = sum(1 for m in home_matches if m.home_score == 0) + sum(1 for m in away_matches if m.away_score == 0)
+    
+    total_matches = len(home_matches) + len(away_matches)
+    
+    # Calculate home/away splits
+    home_goals_scored = sum(m.home_score for m in home_matches)
+    home_goals_conceded = sum(m.away_score for m in home_matches)
+    away_goals_scored = sum(m.away_score for m in away_matches)
+    away_goals_conceded = sum(m.home_score for m in away_matches)
+    
+    return {
+        'overall': {
+            'goals_scored': goals_scored,
+            'goals_conceded': goals_conceded,
+            'clean_sheets': clean_sheets,
+            'failed_to_score': failed_to_score,
+            'goals_per_game': goals_scored / total_matches if total_matches > 0 else 0,
+            'conceded_per_game': goals_conceded / total_matches if total_matches > 0 else 0
+        },
+        'home': {
+            'goals_scored': home_goals_scored,
+            'goals_conceded': home_goals_conceded,
+            'goals_per_game': home_goals_scored / len(home_matches) if home_matches else 0,
+            'conceded_per_game': home_goals_conceded / len(home_matches) if home_matches else 0
+        },
+        'away': {
+            'goals_scored': away_goals_scored,
+            'goals_conceded': away_goals_conceded,
+            'goals_per_game': away_goals_scored / len(away_matches) if away_matches else 0,
+            'conceded_per_game': away_goals_conceded / len(away_matches) if away_matches else 0
+        }
+    }
