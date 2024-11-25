@@ -3,137 +3,222 @@
 {% block styles %}
 <style>
     .page-header {
-        background: linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%);
-        padding: 2rem 0;
+        background: linear-gradient(135deg, #1a2a6c 0%, #b21f1f 100%);
+        padding: 2.5rem 0;
         margin-bottom: 2rem;
         color: white;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+
+    .filter-section {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 8px 16px rgba(0,0,0,0.05);
+        margin-bottom: 2rem;
+        transition: all 0.3s ease;
+    }
+
+    .filter-section:hover {
+        box-shadow: 0 12px 24px rgba(0,0,0,0.08);
+    }
+
+    .filter-title {
+        color: #1a2a6c;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .form-select {
+        border: 1px solid rgba(0,0,0,0.1);
+        border-radius: 10px;
+        padding: 0.8rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-select:focus {
+        border-color: #1a2a6c;
+        box-shadow: 0 0 0 0.2rem rgba(26,42,108,0.15);
     }
 
     .stats-card {
         background: white;
-        border-radius: 15px;
+        border-radius: 20px;
         overflow: hidden;
-        margin-bottom: 1.5rem;
+        margin-bottom: 2rem;
         transition: all 0.3s ease;
-        border: 1px solid rgba(0,0,0,0.05);
+        border: 1px solid rgba(0,0,0,0.06);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.06);
     }
 
     .stats-card:hover {
         transform: translateY(-5px);
-        box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+        box-shadow: 0 12px 30px rgba(0,0,0,0.1);
     }
 
     .stats-header {
-        background: linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%);
+        background: linear-gradient(135deg, #1a2a6c 0%, #b21f1f 100%);
         color: white;
-        padding: 1.5rem;
+        padding: 2rem;
         position: relative;
     }
 
     .team-logo {
-        width: 64px;
-        height: 64px;
+        width: 80px;
+        height: 80px;
         border-radius: 50%;
         background: white;
-        padding: 8px;
-        margin-right: 1rem;
+        padding: 10px;
+        margin-right: 1.5rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+    }
+
+    .team-logo:hover {
+        transform: scale(1.1);
     }
 
     .team-info h3 {
         margin: 0;
-        font-size: 1.5rem;
+        font-size: 1.8rem;
+        font-weight: 700;
     }
 
     .team-info p {
-        margin: 0;
+        margin: 0.5rem 0 0;
         opacity: 0.9;
+        font-size: 1.1rem;
     }
 
-    .stats-body {
-        padding: 1.5rem;
-    }
-
-    .stat-row {
+    .ranking-badge {
+        background: rgba(255,255,255,0.2);
+        backdrop-filter: blur(10px);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.9rem;
         display: flex;
-        justify-content: space-between;
         align-items: center;
-        padding: 1rem;
-        border-bottom: 1px solid #e9ecef;
+        gap: 0.5rem;
     }
 
-    .stat-row:last-child {
-        border-bottom: none;
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        padding: 2rem;
+        background: #f8f9fa;
+    }
+
+    .stat-box {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 15px;
+        text-align: center;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    }
+
+    .stat-box:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.06);
+    }
+
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #1a2a6c;
+        margin-bottom: 0.5rem;
     }
 
     .stat-label {
         color: #6c757d;
         font-weight: 500;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
-    .stat-value {
+    .performance-section {
+        padding: 2rem;
+        background: white;
+    }
+
+    .performance-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .performance-title {
+        font-size: 1.2rem;
         font-weight: 600;
-        color: #2c3e50;
-        font-size: 1.1rem;
-    }
-
-    .progress-stats {
-        padding: 1.5rem;
-        background: #f8f9fa;
+        color: #1a2a6c;
     }
 
     .progress-bar-wrapper {
-        margin: 1rem 0;
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 15px;
+        margin-bottom: 1rem;
     }
 
     .progress-label {
         display: flex;
         justify-content: space-between;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.8rem;
         color: #495057;
         font-weight: 500;
     }
 
     .progress-custom {
-        height: 8px;
+        height: 10px;
         background: #e9ecef;
-        border-radius: 4px;
+        border-radius: 5px;
         overflow: hidden;
     }
 
     .progress-fill {
         height: 100%;
-        background: linear-gradient(90deg, #FF416C 0%, #FF4B2B 100%);
-        border-radius: 4px;
-        transition: width 0.3s ease;
-    }
-
-    .performance-chart {
-        padding: 1.5rem;
-        height: 300px;
+        background: linear-gradient(90deg, #1a2a6c 0%, #b21f1f 100%);
+        border-radius: 5px;
+        transition: width 1s ease;
     }
 
     .recent-matches {
-        padding: 1.5rem;
+        padding: 2rem;
     }
 
     .match-result {
         display: flex;
         align-items: center;
-        padding: 0.8rem;
-        border-radius: 10px;
-        margin-bottom: 0.8rem;
+        padding: 1rem;
+        border-radius: 12px;
+        margin-bottom: 1rem;
         background: #f8f9fa;
+        transition: all 0.3s ease;
+    }
+
+    .match-result:hover {
+        transform: translateX(5px);
+        background: #f0f2f5;
     }
 
     .result-badge {
-        padding: 0.3rem 0.8rem;
-        border-radius: 15px;
-        font-size: 0.85rem;
+        padding: 0.4rem 1rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
         font-weight: 600;
-        margin-right: 1rem;
-        min-width: 70px;
+        margin-right: 1.5rem;
+        min-width: 80px;
         text-align: center;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     .win {
@@ -151,34 +236,60 @@
         color: #212529;
     }
 
-    .filter-section {
-        background: white;
-        border-radius: 15px;
-        padding: 1.5rem;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        margin-bottom: 2rem;
+    .match-info {
+        flex: 1;
     }
 
-    .filter-title {
-        color: #FF416C;
+    .match-teams {
         font-weight: 600;
-        margin-bottom: 1.5rem;
+        color: #212529;
+        margin-bottom: 0.3rem;
+    }
+
+    .match-date {
+        color: #6c757d;
+        font-size: 0.9rem;
     }
 
     .stats-footer {
         background: #f8f9fa;
-        padding: 1rem;
+        padding: 1.5rem;
         border-top: 1px solid rgba(0,0,0,0.05);
         text-align: center;
     }
 
-    .ranking-badge {
-        background: #FF416C;
+    .btn-stats {
+        background: linear-gradient(135deg, #1a2a6c 0%, #b21f1f 100%);
         color: white;
-        padding: 0.3rem 0.8rem;
-        border-radius: 15px;
+        padding: 0.8rem 2rem;
+        border-radius: 25px;
+        border: none;
         font-weight: 600;
-        margin-left: 0.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .btn-stats:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    }
+
+    @media (max-width: 768px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .team-logo {
+            width: 60px;
+            height: 60px;
+        }
+
+        .team-info h3 {
+            font-size: 1.4rem;
+        }
+
+        .stat-value {
+            font-size: 1.6rem;
+        }
     }
 </style>
 {% endblock %}
@@ -187,16 +298,17 @@
 <div class="page-header">
     <div class="container">
         <h1 class="mb-0">Team Statistics</h1>
-        <p class="mb-0 mt-2 text-light">Comprehensive team performance analysis</p>
+        <p class="mb-0 mt-2 text-light">Comprehensive performance analysis and insights</p>
     </div>
 </div>
 
 <div class="container">
     <div class="filter-section">
         <h5 class="filter-title">
-            <i class="fas fa-filter me-2"></i>Select Team
+            <i class="fas fa-filter"></i>
+            Select Team
         </h5>
-        <form method="get" class="row g-3">
+        <form method="get" class="row g-4">
             <div class="col-md-4">
                 <label class="form-label">Sport</label>
                 <select name="sport" class="form-select">
@@ -244,43 +356,36 @@
                 </div>
                 <div class="ms-auto">
                     <span class="ranking-badge">
+                        <i class="fas fa-trophy"></i>
                         Rank #{{ team.league_position }}
                     </span>
                 </div>
             </div>
         </div>
 
-        <div class="stats-body">
-            <div class="row">
-                <div class="col-md-3">
-                    <div class="stat-row">
-                        <span class="stat-label">Matches Played</span>
-                        <span class="stat-value">{{ team.matches_played }}</span>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="stat-row">
-                        <span class="stat-label">Wins</span>
-                        <span class="stat-value">{{ team.wins }}</span>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="stat-row">
-                        <span class="stat-label">Draws</span>
-                        <span class="stat-value">{{ team.draws }}</span>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="stat-row">
-                        <span class="stat-label">Losses</span>
-                        <span class="stat-value">{{ team.losses }}</span>
-                    </div>
-                </div>
+        <div class="stats-grid">
+            <div class="stat-box">
+                <div class="stat-value">{{ team.matches_played }}</div>
+                <div class="stat-label">Matches Played</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">{{ team.wins }}</div>
+                <div class="stat-label">Wins</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">{{ team.draws }}</div>
+                <div class="stat-label">Draws</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">{{ team.losses }}</div>
+                <div class="stat-label">Losses</div>
             </div>
         </div>
 
-        <div class="progress-stats">
-            <h5>Performance Metrics</h5>
+        <div class="performance-section">
+            <div class="performance-header">
+                <h5 class="performance-title">Performance Metrics</h5>
+            </div>
             <div class="progress-bar-wrapper">
                 <div class="progress-label">
                     <span>Win Rate</span>
@@ -311,22 +416,25 @@
         </div>
 
         <div class="recent-matches">
-            <h5>Recent Matches</h5>
+            <h5 class="mb-4">Recent Matches</h5>
             {% for match in team.recent_matches %}
             <div class="match-result">
                 <span class="result-badge {{ match.result.lower() }}">
                     {{ match.result }}
                 </span>
-                <div>
-                    <div>{{ match.opponent }}</div>
-                    <small class="text-muted">{{ match.score }} - {{ match.date.strftime('%d %b %Y') }}</small>
+                <div class="match-info">
+                    <div class="match-teams">{{ match.opponent }}</div>
+                    <div class="match-date">
+                        <i class="far fa-calendar-alt me-2"></i>
+                        {{ match.score }} - {{ match.date.strftime('%d %b %Y') }}
+                    </div>
                 </div>
             </div>
             {% endfor %}
         </div>
 
         <div class="stats-footer">
-            <button class="btn btn-primary" onclick="showFullStats({{ team.id }})">
+            <button class="btn btn-stats" onclick="showFullStats({{ team.id }})">
                 <i class="fas fa-chart-bar me-2"></i>View Full Statistics
             </button>
         </div>
@@ -350,11 +458,27 @@
                 select.closest('form').submit();
             });
         });
+
+        // Animate progress bars on scroll
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.width = entry.target.getAttribute('data-width');
+                }
+            });
+        });
+
+        document.querySelectorAll('.progress-fill').forEach(bar => {
+            const width = bar.style.width;
+            bar.style.width = '0';
+            bar.setAttribute('data-width', width);
+            observer.observe(bar);
+        });
     });
 
     function showFullStats(teamId) {
         // Implement full statistics view
-        alert('Full team statistics coming soon!');
+        window.location.href = `/team/${teamId}/full-stats`;
     }
 </script>
 {% endblock %}

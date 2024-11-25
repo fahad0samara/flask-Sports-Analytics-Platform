@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Predict Match Outcome</h4>
+                </div>
+                <div class="card-body">
+                    <div class="match-details text-center mb-4">
+                        <h5 class="text-muted">{{ match.league.name }}</h5>
+                        <div class="d-flex justify-content-center align-items-center gap-3">
+                            <div class="team-name text-end">
+                                <h4>{{ match.home_team.name }}</h4>
+                            </div>
+                            <div class="vs">
+                                <h4>vs</h4>
+                            </div>
+                            <div class="team-name text-start">
+                                <h4>{{ match.away_team.name }}</h4>
+                            </div>
+                        </div>
+                        <p class="text-muted">
+                            {{ match.start_time.strftime('%d %B %Y, %H:%M') }}
+                        </p>
+                    </div>
+
+                    <form method="POST" class="needs-validation" novalidate>
+                        <div class="mb-4">
+                            <label class="form-label">Who will win?</label>
+                            <div class="d-flex justify-content-center gap-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="predicted_winner" 
+                                           id="home_team" value="{{ match.home_team_id }}" required>
+                                    <label class="form-check-label" for="home_team">
+                                        {{ match.home_team.name }}
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="predicted_winner" 
+                                           id="away_team" value="{{ match.away_team_id }}" required>
+                                    <label class="form-check-label" for="away_team">
+                                        {{ match.away_team.name }}
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="confidence" class="form-label">How confident are you? (0-100%)</label>
+                            <input type="range" class="form-range" id="confidence" name="confidence"
+                                   min="0" max="100" step="1" value="50"
+                                   oninput="confidenceValue.textContent = this.value + '%'">
+                            <div class="text-center">
+                                <span id="confidenceValue">50%</span>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="analysis" class="form-label">Analysis (Optional)</label>
+                            <textarea class="form-control" id="analysis" name="analysis" rows="4"
+                                      placeholder="Share your thoughts on why you think this team will win..."></textarea>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Submit Prediction</button>
+                            <a href="{{ url_for('main.matches') }}" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Form validation
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', event => {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        }, false);
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

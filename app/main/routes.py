@@ -4,16 +4,7 @@ from flask import render_template, flash, redirect, url_for, request, current_ap
 from flask_login import current_user, login_required
 from app import db
 from app.main import bp
-from app.models import User, Sport, League, Team, Match, News, Analysis
-from app.main.utils import (
-    calculate_match_predictions,
-    prediction_confidence,
-    calculate_team_form,
-    calculate_head_to_head,
-    calculate_league_position_trend,
-    get_injury_report,
-    calculate_goal_statistics
-)
+from app.models import User, Sport, League, Team, Match, News, Analysis, Prediction
 
 @bp.route('/')
 def landing():
@@ -862,39 +853,76 @@ def create_analysis(match_id):
 @bp.route('/predictions')
 @login_required
 def predictions():
+    """View predictions page"""
+    # Get filter parameters
     sport_id = request.args.get('sport', type=int)
     league_id = request.args.get('league', type=int)
-    confidence = request.args.get('confidence')
+    status = request.args.get('status', 'all')
     
-    query = Match.query.filter(Match.start_time > datetime.utcnow())
+    # Base query for matches
+    query = Match.query
     
+    # Apply filters
     if sport_id:
         query = query.filter(Match.sport_id == sport_id)
     if league_id:
         query = query.filter(Match.league_id == league_id)
-        
-    matches = query.order_by(Match.start_time).all()
+    if status != 'all':
+        if status == 'correct':
+            # Get matches where user's prediction was correct
+            query = query.join(Prediction).filter(
+                Prediction.user_id == current_user.id,
+                Prediction.is_correct == True
+            )
+        elif status == 'incorrect':
+            # Get matches where user's prediction was wrong
+            query = query.join(Prediction).filter(
+                Prediction.user_id == current_user.id,
+                Prediction.is_correct == False
+            )
+        elif status == 'pending':
+            # Get matches that are not finished yet
+            query = query.join(Prediction).filter(
+                Prediction.user_id == current_user.id,
+                Match.status != Match.STATUS_FINISHED
+            )
     
-    # Calculate predictions for each match
-    for match in matches:
-        predictions = calculate_match_predictions(match)
-        match.home_win_probability = predictions['home_win_probability']
-        match.away_win_probability = predictions['away_win_probability']
-        match.total_goals_prediction = predictions['total_goals_prediction']
-        match.possession_home = predictions['possession_home']
-        match.shots_prediction = predictions['shots_prediction']
+    # Get user's predictions
+    predictions = query.join(Prediction).filter(
+        Prediction.user_id == current_user.id
+    ).order_by(Match.start_time.desc()).all()
     
-    # Filter by confidence if specified
-    if confidence:
-        matches = [m for m in matches if prediction_confidence(m) == confidence]
+    # Get available sports and leagues for filtering
+    sports = Sport.query.all()
+    leagues = League.query.all()
+    
+    # Calculate prediction statistics
+    total_predictions = len(predictions)
+    correct_predictions = sum(1 for match in predictions 
+                            if match.status == Match.STATUS_FINISHED and 
+                            current_user.get_prediction(match).is_correct)
+    
+    accuracy = (correct_predictions / total_predictions * 100) if total_predictions > 0 else 0
+    
+    # Group predictions by month
+    predictions_by_month = {}
+    for match in predictions:
+        month_key = match.start_time.strftime('%B %Y')
+        if month_key not in predictions_by_month:
+            predictions_by_month[month_key] = []
+        predictions_by_month[month_key].append(match)
     
     return render_template('main/predictions.html',
-                         matches=matches,
-                         sports=Sport.query.all(),
-                         leagues=League.query.all(),
+                         title='My Predictions',
+                         predictions_by_month=predictions_by_month,
+                         sports=sports,
+                         leagues=leagues,
                          selected_sport=sport_id,
                          selected_league=league_id,
-                         selected_confidence=confidence)
+                         selected_status=status,
+                         total_predictions=total_predictions,
+                         correct_predictions=correct_predictions,
+                         accuracy=accuracy)
 
 @bp.route('/team-stats')
 @login_required
@@ -980,30 +1008,145 @@ def team_stats():
                          selected_league=league_id,
                          selected_team=team_id)
 
+@bp.route('/match/<int:match_id>/predict', methods=['GET', 'POST'])
+@login_required
+def predict_match(match_id):
+    match = Match.query.get_or_404(match_id)
+    
+    # Check if match is still open for predictions
+    if match.status != Match.STATUS_SCHEDULED:
+        flash('This match is no longer open for predictions.', 'warning')
+        return redirect(url_for('main.matches'))
+    
+    # Check if user has already predicted
+    if current_user.has_predicted(match):
+        flash('You have already made a prediction for this match.', 'info')
+        return redirect(url_for('main.matches'))
+    
+    if request.method == 'POST':
+        try:
+            winner_id = int(request.form.get('predicted_winner'))
+            confidence = float(request.form.get('confidence', 50)) / 100.0
+            
+            # Validate winner_id
+            if winner_id not in [match.home_team_id, match.away_team_id]:
+                raise ValueError('Invalid team selection')
+            
+            # Validate confidence
+            if not 0 <= confidence <= 1:
+                raise ValueError('Confidence must be between 0 and 100')
+            
+            # Create prediction
+            prediction = Prediction(
+                user=current_user,
+                match=match,
+                predicted_winner_id=winner_id,
+                confidence=confidence
+            )
+            db.session.add(prediction)
+            
+            # Create analysis if provided
+            analysis_content = request.form.get('analysis')
+            if analysis_content:
+                analysis = Analysis(
+                    user=current_user,
+                    match=match,
+                    content=analysis_content,
+                    analysis_type='prediction'
+                )
+                db.session.add(analysis)
+            
+            db.session.commit()
+            flash('Your prediction has been recorded!', 'success')
+            return redirect(url_for('main.matches'))
+            
+        except (ValueError, TypeError) as e:
+            flash(f'Error: {str(e)}', 'danger')
+            db.session.rollback()
+    
+    return render_template('main/predict_match.html', 
+                         match=match,
+                         title=f"Predict: {match.home_team.name} vs {match.away_team.name}")
+
 @bp.context_processor
 def utility_processor():
     """Add utility functions and variables to template context"""
     def format_date(date):
-        if date:
-            return date.strftime('%Y-%m-%d')
-        return ''
-
-    def format_datetime(dt):
-        if dt:
-            return dt.strftime('%Y-%m-%d %H:%M')
-        return ''
-
-    def format_time(dt):
-        if dt:
-            return dt.strftime('%H:%M')
-        return ''
+        """Format date for display"""
+        if not date:
+            return ''
+        now = datetime.utcnow()
+        diff = date - now
         
+        if diff.days == 0:
+            # Today
+            if diff.seconds < 3600:  # Less than 1 hour
+                minutes = diff.seconds // 60
+                return f'In {minutes} minutes'
+            else:
+                return date.strftime('%H:%M')
+        elif diff.days == 1:
+            # Tomorrow
+            return f'Tomorrow {date.strftime("%H:%M")}'
+        elif diff.days > 1 and diff.days <= 7:
+            # Within a week
+            return date.strftime('%A %H:%M')
+        else:
+            # More than a week away
+            return date.strftime('%d %b %Y')
+    
+    def format_time_ago(date):
+        """Format time ago for display"""
+        if not date:
+            return ''
+        now = datetime.utcnow()
+        diff = now - date
+        
+        if diff.days > 365:
+            years = diff.days // 365
+            return f'{years}y ago'
+        elif diff.days > 30:
+            months = diff.days // 30
+            return f'{months}m ago'
+        elif diff.days > 0:
+            return f'{diff.days}d ago'
+        elif diff.seconds > 3600:
+            hours = diff.seconds // 3600
+            return f'{hours}h ago'
+        elif diff.seconds > 60:
+            minutes = diff.seconds // 60
+            return f'{minutes}m ago'
+        else:
+            return 'Just now'
+    
+    def format_confidence(confidence):
+        """Format confidence score as percentage"""
+        if confidence is None:
+            return '0%'
+        return f'{int(confidence * 100)}%'
+    
+    def get_prediction_status(match, user):
+        """Get prediction status for a match"""
+        if not user or not user.is_authenticated:
+            return None
+        return user.get_prediction(match)
+    
+    def get_match_prediction_stats(match):
+        """Get prediction statistics for a match"""
+        stats = match.get_prediction_stats()
+        return {
+            'total': stats['total_predictions'],
+            'home_percentage': stats['home_win_percentage'],
+            'away_percentage': stats['away_win_percentage'],
+            'confidence': stats['average_confidence']
+        }
+    
     return dict(
         format_date=format_date,
-        format_datetime=format_datetime,
-        format_time=format_time,
-        prediction_confidence=prediction_confidence,
-        calculate_match_predictions=calculate_match_predictions
+        format_time_ago=format_time_ago,
+        format_confidence=format_confidence,
+        get_prediction_status=get_prediction_status,
+        get_match_prediction_stats=get_match_prediction_stats
     )
 
 def get_paginated_news(page=1, sport=None, search=None):

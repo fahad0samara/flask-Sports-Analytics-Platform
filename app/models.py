@@ -1,7 +1,7 @@
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
-from sqlalchemy import func, case
+from sqlalchemy import func, case, or_, and_
 from app import db
 
 class User(UserMixin, db.Model):
@@ -117,20 +117,116 @@ class Sport(db.Model):
         return f'<Sport {self.name}>'
 
 class Team(db.Model):
+    __tablename__ = 'team'
+    __table_args__ = (
+        db.UniqueConstraint('name', name='uq_team_name'),
+    )
+    
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), nullable=False)
     sport_id = db.Column(db.Integer, db.ForeignKey('sport.id'), nullable=False)
     league_id = db.Column(db.Integer, db.ForeignKey('league.id'), nullable=False)
-    players = db.relationship('Player', back_populates='team', lazy='dynamic')
-    logo_url = db.Column(db.String(200))  # URL to team logo
+    country = db.Column(db.String(64))
+    founded_year = db.Column(db.Integer)
+    logo_url = db.Column(db.String(256))
+    description = db.Column(db.Text)
+    
+    # Relationships
+    home_matches = db.relationship('Match', back_populates='home_team', foreign_keys='Match.home_team_id',
+                                 lazy='dynamic', cascade='all, delete-orphan')
+    away_matches = db.relationship('Match', back_populates='away_team', foreign_keys='Match.away_team_id',
+                                 lazy='dynamic', cascade='all, delete-orphan')
+    won_matches = db.relationship('Match', back_populates='winner', foreign_keys='Match.winner_id',
+                                lazy='dynamic')
     sport = db.relationship('Sport', back_populates='teams')
     league = db.relationship('League', back_populates='teams')
-    home_matches = db.relationship('Match', back_populates='home_team', foreign_keys='Match.home_team_id', lazy='dynamic')
-    away_matches = db.relationship('Match', back_populates='away_team', foreign_keys='Match.away_team_id', lazy='dynamic')
-    won_matches = db.relationship('Match', back_populates='winner', foreign_keys='Match.winner_id', lazy='dynamic')
+    players = db.relationship('Player', back_populates='team', lazy='dynamic',
+                            cascade='all, delete-orphan')
     fans = db.relationship('User', secondary='user_favorite_teams',
                           back_populates='favorite_teams', lazy='dynamic')
-
+    
+    def get_recent_form(self, num_matches=5):
+        """Get team's recent form based on last N matches"""
+        recent_matches = Match.query.filter(
+            or_(
+                Match.home_team_id == self.id,
+                Match.away_team_id == self.id
+            ),
+            Match.status == Match.STATUS_FINISHED
+        ).order_by(Match.start_time.desc()).limit(num_matches).all()
+        
+        form = []
+        for match in recent_matches:
+            if match.winner_id == self.id:
+                form.append('W')
+            elif match.winner_id is None:
+                form.append('D')
+            else:
+                form.append('L')
+        
+        return {
+            'form_string': ''.join(form),
+            'wins': form.count('W'),
+            'draws': form.count('D'),
+            'losses': form.count('L'),
+            'total': len(form),
+            'win_percentage': (form.count('W') / len(form) * 100) if form else 0
+        }
+    
+    def get_points(self):
+        """Calculate team's total points"""
+        wins = Match.query.filter(
+            Match.winner_id == self.id,
+            Match.status == Match.STATUS_FINISHED
+        ).count()
+        
+        draws = Match.query.filter(
+            or_(
+                Match.home_team_id == self.id,
+                Match.away_team_id == self.id
+            ),
+            Match.winner_id == None,
+            Match.status == Match.STATUS_FINISHED
+        ).count()
+        
+        return (wins * 3) + draws
+    
+    def get_goal_difference(self):
+        """Calculate team's goal difference"""
+        home_matches = Match.query.filter(
+            Match.home_team_id == self.id,
+            Match.status == Match.STATUS_FINISHED
+        ).with_entities(
+            func.sum(Match.home_score).label('goals_for'),
+            func.sum(Match.away_score).label('goals_against')
+        ).first()
+        
+        away_matches = Match.query.filter(
+            Match.away_team_id == self.id,
+            Match.status == Match.STATUS_FINISHED
+        ).with_entities(
+            func.sum(Match.away_score).label('goals_for'),
+            func.sum(Match.home_score).label('goals_against')
+        ).first()
+        
+        goals_for = (home_matches.goals_for or 0) + (away_matches.goals_for or 0)
+        goals_against = (home_matches.goals_against or 0) + (away_matches.goals_against or 0)
+        
+        return goals_for - goals_against
+    
+    def to_dict(self):
+        """Convert team to dictionary"""
+        return {
+            'id': self.id,
+            'name': self.name,
+            'sport': self.sport.name,
+            'country': self.country,
+            'founded_year': self.founded_year,
+            'logo_url': self.logo_url,
+            'description': self.description,
+            'recent_form': self.get_recent_form()
+        }
+    
     def __repr__(self):
         return f'<Team {self.name}>'
 
@@ -268,6 +364,84 @@ class Match(db.Model):
             'home_win_count': home_wins,
             'away_win_count': away_wins,
             'average_confidence': avg_confidence
+        }
+    
+    def get_match_stats(self):
+        """Get comprehensive match statistics"""
+        prediction_stats = self.get_prediction_stats()
+        
+        # Get team form (last 5 matches)
+        home_form = self.home_team.get_recent_form(5)
+        away_form = self.away_team.get_recent_form(5)
+        
+        # Calculate head-to-head stats
+        h2h_matches = Match.query.filter(
+            or_(
+                and_(Match.home_team_id == self.home_team_id, Match.away_team_id == self.away_team_id),
+                and_(Match.home_team_id == self.away_team_id, Match.away_team_id == self.home_team_id)
+            ),
+            Match.status == Match.STATUS_FINISHED,
+            Match.id != self.id
+        ).order_by(Match.start_time.desc()).limit(5).all()
+        
+        h2h_stats = {
+            'total': len(h2h_matches),
+            'home_wins': 0,
+            'away_wins': 0,
+            'draws': 0,
+            'matches': []
+        }
+        
+        for match in h2h_matches:
+            if match.winner_id == self.home_team_id:
+                h2h_stats['home_wins'] += 1
+            elif match.winner_id == self.away_team_id:
+                h2h_stats['away_wins'] += 1
+            else:
+                h2h_stats['draws'] += 1
+            
+            h2h_stats['matches'].append({
+                'date': match.start_time,
+                'home_team': match.home_team.name,
+                'away_team': match.away_team.name,
+                'score': f"{match.home_score}-{match.away_score}"
+            })
+        
+        # Get league positions
+        league_teams = Team.query.join(Match, or_(
+            Match.home_team_id == Team.id,
+            Match.away_team_id == Team.id
+        )).filter(
+            Match.league_id == self.league_id,
+            Match.status == Match.STATUS_FINISHED
+        ).distinct().all()
+        
+        league_positions = {
+            'home': None,
+            'away': None,
+            'total_teams': len(league_teams)
+        }
+        
+        # Sort teams by points and goal difference
+        sorted_teams = sorted(league_teams, key=lambda t: (-t.get_points(), -t.get_goal_difference()))
+        for pos, team in enumerate(sorted_teams, 1):
+            if team.id == self.home_team_id:
+                league_positions['home'] = pos
+            elif team.id == self.away_team_id:
+                league_positions['away'] = pos
+        
+        return {
+            'prediction_stats': prediction_stats,
+            'home_form': home_form,
+            'away_form': away_form,
+            'head_to_head': h2h_stats,
+            'league_positions': league_positions,
+            'match_status': self.get_time_status(),
+            'sport': self.sport.name,
+            'league': self.league.name,
+            'start_time': self.start_time,
+            'venue': f"{self.home_team.name}'s Home Ground",  # You might want to add a venue field to the Match model
+            'referee': "TBD"  # You might want to add a referee field to the Match model
         }
     
     def to_dict(self):

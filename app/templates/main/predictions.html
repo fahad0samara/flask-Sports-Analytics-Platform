@@ -1,612 +1,168 @@
 {% extends "base.html" %}
 
-{% block title %}Match Predictions{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <!-- Stats Overview -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-muted">Total Predictions</h5>
+                    <h2 class="mb-0">{{ total_predictions }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-muted">Correct Predictions</h5>
+                    <h2 class="mb-0">{{ correct_predictions }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-muted">Accuracy</h5>
+                    <h2 class="mb-0">{{ "%.1f"|format(accuracy) }}%</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">Sport</label>
+                    <select name="sport" class="form-select" onchange="this.form.submit()">
+                        <option value="">All Sports</option>
+                        {% for sport in sports %}
+                        <option value="{{ sport.id }}" {% if sport.id == selected_sport %}selected{% endif %}>
+                            {{ sport.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">League</label>
+                    <select name="league" class="form-select" onchange="this.form.submit()">
+                        <option value="">All Leagues</option>
+                        {% for league in leagues %}
+                        <option value="{{ league.id }}" {% if league.id == selected_league %}selected{% endif %}>
+                            {{ league.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Status</label>
+                    <select name="status" class="form-select" onchange="this.form.submit()">
+                        <option value="all" {% if selected_status == 'all' %}selected{% endif %}>All</option>
+                        <option value="correct" {% if selected_status == 'correct' %}selected{% endif %}>Correct</option>
+                        <option value="incorrect" {% if selected_status == 'incorrect' %}selected{% endif %}>Incorrect</option>
+                        <option value="pending" {% if selected_status == 'pending' %}selected{% endif %}>Pending</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Predictions List -->
+    {% for month, matches in predictions_by_month.items() %}
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">{{ month }}</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="list-group list-group-flush">
+                {% for match in matches %}
+                {% set prediction = current_user.get_prediction(match) %}
+                <div class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="match-info">
+                            <div class="text-muted small">{{ match.league.name }}</div>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="team-name">{{ match.home_team.name }}</span>
+                                {% if match.status == match.STATUS_FINISHED %}
+                                <span class="score">{{ match.home_score }} - {{ match.away_score }}</span>
+                                {% else %}
+                                <span class="vs">vs</span>
+                                {% endif %}
+                                <span class="team-name">{{ match.away_team.name }}</span>
+                            </div>
+                        </div>
+                        <div class="prediction-info text-end">
+                            <div class="prediction-details">
+                                <span class="predicted-winner">
+                                    Predicted: {{ match.home_team.name if prediction.predicted_winner_id == match.home_team_id else match.away_team.name }}
+                                </span>
+                                <span class="confidence ms-2">
+                                    ({{ format_confidence(prediction.confidence) }})
+                                </span>
+                            </div>
+                            {% if match.status == match.STATUS_FINISHED %}
+                            <div class="prediction-result">
+                                {% if prediction.is_correct %}
+                                <span class="badge bg-success">Correct</span>
+                                {% else %}
+                                <span class="badge bg-danger">Incorrect</span>
+                                {% endif %}
+                            </div>
+                            {% else %}
+                            <div class="match-status">
+                                <span class="badge bg-primary">{{ match.get_time_status() }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <div class="mb-3">
+            <i class="fas fa-chart-line fa-3x text-muted"></i>
+        </div>
+        <h4>No predictions yet</h4>
+        <p class="text-muted">Start making predictions to see them here!</p>
+        <a href="{{ url_for('main.matches') }}" class="btn btn-primary">
+            View Matches
+        </a>
+    </div>
+    {% endfor %}
+</div>
 
 {% block styles %}
 <style>
-    /* Enhanced Gradient Backgrounds */
-    .page-header {
-        background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
-        padding: 3rem 0;
-        margin-bottom: 2rem;
-        color: white;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-        position: relative;
-        overflow: hidden;
-    }
-
-    .page-header::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: url('data:image/svg+xml,<svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M0 0h20v20H0z" fill="none"/><path d="M10 0l10 10-10 10L0 10z" fill="rgba(255,255,255,0.05)"/></svg>') repeat;
-        opacity: 0.3;
-    }
-
-    .page-header h1 {
-        font-weight: 800;
-        letter-spacing: -0.5px;
-        margin-bottom: 0.5rem;
-        font-size: 2.5rem;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-    }
-
-    .page-header p {
-        font-size: 1.1rem;
-        opacity: 0.9;
-    }
-
-    /* Enhanced Filter Section */
-    .filter-section {
-        background: white;
-        border-radius: 20px;
-        padding: 2rem;
-        box-shadow: 0 8px 30px rgba(0,0,0,0.05);
-        margin-bottom: 2rem;
-        border: 1px solid rgba(99, 102, 241, 0.1);
-    }
-
-    .filter-title {
-        color: #4F46E5;
-        font-weight: 700;
-        margin-bottom: 1.5rem;
-        display: flex;
-        align-items: center;
-        font-size: 1.25rem;
-    }
-
-    /* Enhanced Prediction Cards */
-    .prediction-card {
-        background: white;
-        border-radius: 20px;
-        overflow: hidden;
-        margin-bottom: 2rem;
-        transition: all 0.3s ease;
-        border: 1px solid rgba(99, 102, 241, 0.1);
-        box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-    }
-
-    .prediction-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 12px 30px rgba(0,0,0,0.1);
-        border-color: rgba(99, 102, 241, 0.2);
-    }
-
-    .prediction-header {
-        background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
-        color: white;
-        padding: 1.5rem;
-        position: relative;
-    }
-
-    .prediction-body {
-        padding: 2rem;
-    }
-
-    .team-prediction {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin: 1rem 0;
-        padding: 1rem 1.5rem;
-        border-radius: 15px;
-        background: #F9FAFB;
-        transition: all 0.3s ease;
-    }
-
-    .team-prediction:hover {
-        background: #F3F4F6;
-        transform: scale(1.02);
-    }
-
-    .team-name {
-        font-weight: 700;
-        color: #1F2937;
-        font-size: 1.1rem;
-    }
-
-    .prediction-percentage {
-        font-size: 1.3rem;
-        font-weight: 800;
-        background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
-
-    .prediction-bar {
-        height: 10px;
-        background: #E5E7EB;
-        border-radius: 5px;
-        margin: 0.75rem 0;
-        overflow: hidden;
-    }
-
-    .prediction-fill {
-        height: 100%;
-        background: linear-gradient(90deg, #6366F1, #4F46E5);
-        border-radius: 5px;
-        transition: width 0.6s ease;
-    }
-
-    .prediction-stats {
-        display: flex;
-        justify-content: space-around;
-        margin-top: 2rem;
-        padding: 1.5rem;
-        background: #F9FAFB;
-        border-radius: 15px;
-    }
-
-    .stat-item {
-        text-align: center;
-        padding: 0.5rem 1rem;
-        transition: all 0.3s ease;
-    }
-
-    .stat-item:hover {
-        transform: translateY(-3px);
-    }
-
-    .stat-value {
-        font-size: 1.75rem;
-        font-weight: 800;
-        background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin-bottom: 0.5rem;
-    }
-
-    .stat-label {
-        font-size: 0.9rem;
-        color: #6B7280;
-        font-weight: 500;
-    }
-
-    .confidence-badge {
-        padding: 0.5rem 1.25rem;
-        border-radius: 25px;
-        font-size: 0.9rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-    .confidence-high {
-        background: linear-gradient(135deg, #34D399 0%, #10B981 100%);
-        color: white;
-    }
-
-    .confidence-medium {
-        background: linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%);
-        color: white;
-    }
-
-    .confidence-low {
-        background: linear-gradient(135deg, #F87171 0%, #EF4444 100%);
-        color: white;
-    }
-
-    .prediction-footer {
-        background: #F9FAFB;
-        padding: 1.5rem;
-        border-top: 1px solid rgba(99, 102, 241, 0.1);
-        text-align: center;
-    }
-
-    /* Responsive Design */
-    @media (max-width: 768px) {
-        .page-header {
-            padding: 2rem 0;
-        }
-
-        .page-header h1 {
-            font-size: 2rem;
-        }
-
-        .prediction-stats {
-            flex-direction: column;
-            gap: 1.5rem;
-        }
-
-        .stat-item {
-            padding: 1rem;
-            border-bottom: 1px solid rgba(99, 102, 241, 0.1);
-        }
-
-        .stat-item:last-child {
-            border-bottom: none;
-        }
-
-        .team-prediction {
-            padding: 1rem;
-        }
-
-        .prediction-percentage {
-            font-size: 1.1rem;
-        }
-    }
-
-    /* Modal Styles */
-    .modal-content {
-        border-radius: 20px;
-        border: none;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-    }
-
-    .modal-header {
-        background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
-        color: white;
-        border-radius: 20px 20px 0 0;
-        padding: 1.5rem;
-    }
-
-    .modal-title {
-        font-weight: 700;
-        font-size: 1.5rem;
-    }
-
-    .btn-close {
-        filter: brightness(0) invert(1);
-    }
-
-    .match-teams {
-        background: #F9FAFB;
-        padding: 2rem;
-        border-radius: 15px;
-    }
-
-    .team-name {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: #1F2937;
-        margin-bottom: 1rem;
-    }
-
-    .vs-badge {
-        background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
-        color: white;
-        padding: 0.5rem 1.5rem;
-        border-radius: 25px;
-        font-weight: 700;
-        font-size: 1.2rem;
-    }
-
-    .probability-value {
-        font-size: 2rem;
-        font-weight: 800;
-        background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
-
-    .stat-card {
-        background: white;
-        border-radius: 15px;
-        padding: 1.5rem;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        border: 1px solid rgba(99, 102, 241, 0.1);
-        transition: all 0.3s ease;
-    }
-
-    .stat-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 12px rgba(0,0,0,0.1);
-    }
-
-    .stat-label {
-        color: #6B7280;
-        font-size: 0.9rem;
-        font-weight: 600;
-        margin-bottom: 0.5rem;
-    }
-
-    .stat-value {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: #1F2937;
-    }
-
-    .head-to-head {
-        border: 1px solid rgba(99, 102, 241, 0.1);
-    }
-
-    .list-group-item {
-        border-left: 4px solid #6366F1;
-        margin-bottom: 0.5rem;
-        border-radius: 8px;
-        padding: 1rem;
-        background: #F9FAFB;
-        border-top: 1px solid rgba(99, 102, 241, 0.1);
-        border-right: 1px solid rgba(99, 102, 241, 0.1);
-        border-bottom: 1px solid rgba(99, 102, 241, 0.1);
-    }
+.match-info {
+    flex: 1;
+}
+.team-name {
+    font-weight: 500;
+}
+.score, .vs {
+    font-weight: 600;
+    padding: 0 8px;
+}
+.prediction-info {
+    text-align: right;
+}
+.prediction-details {
+    font-size: 0.9rem;
+}
+.confidence {
+    color: #666;
+}
+.prediction-result {
+    margin-top: 4px;
+}
 </style>
 {% endblock %}
-
-{% block content %}
-<div class="page-header text-center">
-    <div class="container">
-        <h1>Match Predictions</h1>
-        <p>AI-powered predictions for upcoming matches</p>
-    </div>
-</div>
-
-<div class="container">
-    <div class="filter-section">
-        <h5 class="filter-title">
-            <i class="fas fa-filter me-2"></i>Filter Predictions
-        </h5>
-        <form method="GET" class="row g-3">
-            <div class="col-md-4">
-                <label for="sport" class="form-label">Sport</label>
-                <select class="form-select" id="sport" name="sport">
-                    <option value="">All Sports</option>
-                    {% for sport in sports %}
-                    <option value="{{ sport.id }}" {% if selected_sport == sport.id %}selected{% endif %}>
-                        {{ sport.name }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label for="league" class="form-label">League</label>
-                <select class="form-select" id="league" name="league">
-                    <option value="">All Leagues</option>
-                    {% for league in leagues %}
-                    <option value="{{ league.id }}" {% if selected_league == league.id %}selected{% endif %}>
-                        {{ league.name }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label for="confidence" class="form-label">Confidence Level</label>
-                <select class="form-select" id="confidence" name="confidence">
-                    <option value="">All Levels</option>
-                    <option value="high" {% if selected_confidence == 'high' %}selected{% endif %}>High</option>
-                    <option value="medium" {% if selected_confidence == 'medium' %}selected{% endif %}>Medium</option>
-                    <option value="low" {% if selected_confidence == 'low' %}selected{% endif %}>Low</option>
-                </select>
-            </div>
-            <div class="col-12">
-                <button type="submit" class="btn btn-primary">Apply Filters</button>
-            </div>
-        </form>
-    </div>
-
-    <div class="row">
-        {% for match in matches %}
-        <div class="col-md-6 col-lg-4">
-            <div class="prediction-card">
-                <div class="prediction-header">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="small">{{ match.sport.name }} - {{ match.league.name }}</div>
-                            <div>{{ match.start_time.strftime('%d %b %Y, %H:%M') }}</div>
-                        </div>
-                        <span class="confidence-badge confidence-{{ match.confidence }}">
-                            {{ match.confidence }} confidence
-                        </span>
-                    </div>
-                </div>
-                <div class="prediction-body">
-                    <div class="team-prediction">
-                        <span class="team-name">{{ match.home_team.name }}</span>
-                        {% if calculate_match_predictions is defined %}
-                        {% set predictions = calculate_match_predictions(match) %}
-                        <span class="prediction-percentage">{{ predictions.home_win_probability }}%</span>
-                        {% else %}
-                        <span class="prediction-percentage">{{ match.home_win_probability }}%</span>
-                        {% endif %}
-                    </div>
-                    <div class="prediction-bar">
-                        {% if calculate_match_predictions is defined %}
-                        <div class="prediction-fill" style="width: {{ predictions.home_win_probability }}%"></div>
-                        {% else %}
-                        <div class="prediction-fill" style="width: {{ match.home_win_probability }}%"></div>
-                        {% endif %}
-                    </div>
-                    <div class="team-prediction">
-                        <span class="team-name">{{ match.away_team.name }}</span>
-                        {% if calculate_match_predictions is defined %}
-                        <span class="prediction-percentage">{{ predictions.away_win_probability }}%</span>
-                        {% else %}
-                        <span class="prediction-percentage">{{ match.away_win_probability }}%</span>
-                        {% endif %}
-                    </div>
-                    <div class="prediction-bar">
-                        {% if calculate_match_predictions is defined %}
-                        <div class="prediction-fill" style="width: {{ predictions.away_win_probability }}%"></div>
-                        {% else %}
-                        <div class="prediction-fill" style="width: {{ match.away_win_probability }}%"></div>
-                        {% endif %}
-                    </div>
-                    <div class="prediction-stats">
-                        <div class="stat-item">
-                            {% if calculate_match_predictions is defined %}
-                            <div class="stat-value">{{ predictions.total_goals_prediction }}</div>
-                            {% else %}
-                            <div class="stat-value">{{ match.total_goals_prediction }}</div>
-                            {% endif %}
-                            <div class="stat-label">Predicted Goals</div>
-                        </div>
-                        <div class="stat-item">
-                            {% if calculate_match_predictions is defined %}
-                            <div class="stat-value">{{ predictions.possession_home }}%</div>
-                            {% else %}
-                            <div class="stat-value">{{ match.possession_home }}%</div>
-                            {% endif %}
-                            <div class="stat-label">Home Possession</div>
-                        </div>
-                        <div class="stat-item">
-                            {% if calculate_match_predictions is defined %}
-                            <div class="stat-value">{{ predictions.shots_prediction }}</div>
-                            {% else %}
-                            <div class="stat-value">{{ match.shots_prediction }}</div>
-                            {% endif %}
-                            <div class="stat-label">Total Shots</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="prediction-footer">
-                    <button class="btn btn-primary" onclick="showPredictionDetails('{{ match.id }}')">
-                        View Full Analysis
-                    </button>
-                </div>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-</div>
-
-<!-- Prediction Details Modal -->
-<div class="modal fade" id="predictionModal" tabindex="-1" aria-labelledby="predictionModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="predictionModalLabel">Match Analysis</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div id="matchDetails" class="p-3">
-                    <div class="match-teams mb-4">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div class="team home-team text-center">
-                                <h3 class="team-name" id="modalHomeTeam"></h3>
-                                <div class="win-probability">
-                                    <span id="modalHomeProbability" class="probability-value"></span>
-                                </div>
-                            </div>
-                            <div class="vs-badge">VS</div>
-                            <div class="team away-team text-center">
-                                <h3 class="team-name" id="modalAwayTeam"></h3>
-                                <div class="win-probability">
-                                    <span id="modalAwayProbability" class="probability-value"></span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="detailed-stats">
-                        <h4 class="mb-3">Detailed Statistics</h4>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="stat-card mb-3">
-                                    <div class="stat-label">Expected Goals</div>
-                                    <div class="stat-value" id="modalExpectedGoals"></div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="stat-card mb-3">
-                                    <div class="stat-label">Possession</div>
-                                    <div class="stat-value" id="modalPossession"></div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="stat-card mb-3">
-                                    <div class="stat-label">Expected Shots</div>
-                                    <div class="stat-value" id="modalExpectedShots"></div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="stat-card mb-3">
-                                    <div class="stat-label">Form Rating</div>
-                                    <div class="stat-value" id="modalFormRating"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="historical-data mt-4">
-                        <h4 class="mb-3">Historical Performance</h4>
-                        <div class="head-to-head p-3 rounded bg-light">
-                            <h5 class="mb-3">Head-to-Head Record</h5>
-                            <div id="headToHeadStats"></div>
-                        </div>
-                    </div>
-
-                    <div class="key-factors mt-4">
-                        <h4 class="mb-3">Key Factors</h4>
-                        <ul class="list-group" id="keyFactorsList">
-                        </ul>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-const matchData = {
-    {% for match in matches %}
-    "{{ match.id }}": {
-        homeTeam: "{{ match.home_team.name }}",
-        awayTeam: "{{ match.away_team.name }}",
-        homeWinProbability: "{{ match.home_win_probability }}%",
-        awayWinProbability: "{{ match.away_win_probability }}%",
-        expectedGoals: "{{ match.total_goals_prediction }}",
-        possession: "{{ match.possession_home }}%",
-        expectedShots: "{{ match.shots_prediction }}",
-        formRating: "8.5",  // Example value
-        headToHead: [
-            "Last 5 meetings: 3 wins, 1 draw, 1 loss",
-            "Average goals per game: 2.8",
-            "Clean sheets: 2"
-        ],
-        keyFactors: [
-            "Strong home record this season",
-            "Key player returns from injury",
-            "Historical advantage in head-to-head matches",
-            "Recent form shows improving trend"
-        ]
-    },
-    {% endfor %}
-};
-
-function showPredictionDetails(matchId) {
-    const match = matchData[matchId];
-    if (!match) return;
-
-    // Update modal content
-    document.getElementById('modalHomeTeam').textContent = match.homeTeam;
-    document.getElementById('modalAwayTeam').textContent = match.awayTeam;
-    document.getElementById('modalHomeProbability').textContent = match.homeWinProbability;
-    document.getElementById('modalAwayProbability').textContent = match.awayWinProbability;
-    document.getElementById('modalExpectedGoals').textContent = match.expectedGoals;
-    document.getElementById('modalPossession').textContent = match.possession;
-    document.getElementById('modalExpectedShots').textContent = match.expectedShots;
-    document.getElementById('modalFormRating').textContent = match.formRating;
-
-    // Update head-to-head stats
-    const headToHeadHtml = match.headToHead.map(stat => `<div class="mb-2">${stat}</div>`).join('');
-    document.getElementById('headToHeadStats').innerHTML = headToHeadHtml;
-
-    // Update key factors
-    const keyFactorsHtml = match.keyFactors.map(factor => 
-        `<li class="list-group-item">${factor}</li>`
-    ).join('');
-    document.getElementById('keyFactorsList').innerHTML = keyFactorsHtml;
-
-    // Show modal
-    const modal = new bootstrap.Modal(document.getElementById('predictionModal'));
-    modal.show();
-}
-
-// Initialize all tooltips
-document.addEventListener('DOMContentLoaded', function() {
-    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    tooltipTriggerList.map(function(tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
-});
-</script>
 {% endblock %}
