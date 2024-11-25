@@ -7,8 +7,9 @@ from app.main import bp
 from app.models import User, Sport, League, Team, Match, News, Analysis, Prediction
 
 @bp.route('/')
+@bp.route('/index')
 def index():
-    """Landing page with live matches and platform statistics"""
+    """Landing page or dashboard based on authentication status"""
     if not current_user.is_authenticated:
         # Get platform statistics for landing page
         total_matches = Match.query.count()
@@ -112,50 +113,6 @@ def index():
                          latest_news=latest_news,
                          performance_dates=performance_dates,
                          performance_accuracy=performance_accuracy)
-
-@bp.route('/index')
-@login_required
-def index():
-    """Dashboard for authenticated users"""
-    now = datetime.utcnow()
-    
-    # Get live matches
-    live_matches = Match.query.filter(
-        Match.status == 'live'
-    ).order_by(Match.start_time.desc()).limit(6).all()
-    
-    # Get upcoming matches
-    upcoming_matches = Match.query.filter(
-        Match.status == 'scheduled',
-        Match.start_time > now
-    ).order_by(Match.start_time).limit(6).all()
-    
-    # Get user's recent predictions
-    predictions = Analysis.query.filter_by(
-        user_id=current_user.id
-    ).order_by(Analysis.created_at.desc()).limit(6).all()
-    
-    # Calculate prediction statistics
-    total_predictions = Analysis.query.filter_by(
-        user_id=current_user.id
-    ).count()
-    
-    correct_predictions = Analysis.query.filter_by(
-        user_id=current_user.id,
-        is_correct=True
-    ).count()
-    
-    prediction_accuracy = (correct_predictions / total_predictions * 100) if total_predictions > 0 else 0
-    
-    return render_template('main/index.html',
-        live_matches=live_matches,
-        upcoming_matches=upcoming_matches,
-        predictions=predictions,
-        total_predictions=total_predictions,
-        correct_predictions=correct_predictions,
-        prediction_accuracy=prediction_accuracy,
-        now=datetime.utcnow
-    )
 
 @bp.route('/match/<int:match_id>')
 @login_required
