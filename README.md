@@ -2,7 +2,9 @@
 
 A modern, AI-powered sports analytics platform built with Flask, featuring real-time predictions, beautiful UI, and comprehensive analytics tools.
 
-![Sports Analytics Platform](app/static/images/hero-illustration.svg)
+<div align="center">
+  <img src="app/static/images/hero-illustration.svg" alt="Sports Analytics Platform" width="600px">
+</div>
 
 ## 🌟 Features
 
