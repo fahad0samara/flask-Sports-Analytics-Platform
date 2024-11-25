@@ -1,72 +1,212 @@
 {% extends "base.html" %}
 
+{% block styles %}
+<style>
+    .prediction-card {
+        background: white;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+        border: none;
+    }
+
+    .prediction-header {
+        background: linear-gradient(135deg, #1a2a6c 0%, #b21f1f 100%);
+        padding: 2rem;
+        color: white;
+        position: relative;
+    }
+
+    .prediction-header::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+    }
+
+    .prediction-body {
+        padding: 2rem;
+    }
+
+    .match-details {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .team-section {
+        text-align: center;
+        flex: 1;
+    }
+
+    .team-name {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #1a2a6c;
+        margin: 0.5rem 0;
+    }
+
+    .vs-badge {
+        background: linear-gradient(135deg, #1a2a6c 0%, #b21f1f 100%);
+        color: white;
+        padding: 0.5rem 1.5rem;
+        border-radius: 20px;
+        font-weight: 600;
+        margin: 0 1.5rem;
+    }
+
+    .match-time {
+        color: #6c757d;
+        font-size: 1.1rem;
+        margin-top: 1rem;
+    }
+
+    .prediction-options {
+        display: flex;
+        gap: 1.5rem;
+        margin: 2rem 0;
+    }
+
+    .team-option {
+        flex: 1;
+        text-align: center;
+        padding: 1.5rem;
+        border: 2px solid #e9ecef;
+        border-radius: 15px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .team-option:hover {
+        border-color: #1a2a6c;
+        transform: translateY(-3px);
+    }
+
+    .team-option.selected {
+        border-color: #1a2a6c;
+        background: linear-gradient(135deg, #1a2a6c 0%, #b21f1f 100%);
+        color: white;
+    }
+
+    .confidence-slider {
+        margin: 2rem 0;
+    }
+
+    .confidence-value {
+        font-size: 2rem;
+        font-weight: 600;
+        color: #1a2a6c;
+        text-align: center;
+        margin: 1rem 0;
+    }
+
+    .form-range {
+        height: 8px;
+    }
+
+    .form-range::-webkit-slider-thumb {
+        background: linear-gradient(135deg, #1a2a6c 0%, #b21f1f 100%);
+    }
+
+    .analysis-input {
+        border-radius: 15px;
+        padding: 1rem;
+        resize: none;
+    }
+
+    .submit-btn {
+        background: linear-gradient(135deg, #1a2a6c 0%, #b21f1f 100%);
+        border: none;
+        padding: 1rem;
+        font-weight: 600;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+    }
+
+    .submit-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+
+    .cancel-btn {
+        border-radius: 12px;
+        padding: 1rem;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container py-4">
+<div class="container py-5">
     <div class="row justify-content-center">
         <div class="col-md-8">
-            <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">Predict Match Outcome</h4>
+            <div class="prediction-card">
+                <div class="prediction-header">
+                    <h3 class="mb-0 text-center">Make Your Prediction</h3>
                 </div>
-                <div class="card-body">
-                    <div class="match-details text-center mb-4">
-                        <h5 class="text-muted">{{ match.league.name }}</h5>
-                        <div class="d-flex justify-content-center align-items-center gap-3">
-                            <div class="team-name text-end">
-                                <h4>{{ match.home_team.name }}</h4>
+                
+                <div class="prediction-body">
+                    <div class="match-details">
+                        <h5 class="text-center text-muted mb-4">{{ match.league.name }}</h5>
+                        <div class="d-flex align-items-center justify-content-center">
+                            <div class="team-section">
+                                <div class="team-name">{{ match.home_team.name }}</div>
                             </div>
-                            <div class="vs">
-                                <h4>vs</h4>
-                            </div>
-                            <div class="team-name text-start">
-                                <h4>{{ match.away_team.name }}</h4>
+                            
+                            <span class="vs-badge">VS</span>
+                            
+                            <div class="team-section">
+                                <div class="team-name">{{ match.away_team.name }}</div>
                             </div>
                         </div>
-                        <p class="text-muted">
+                        <div class="match-time text-center">
                             {{ match.start_time.strftime('%d %B %Y, %H:%M') }}
-                        </p>
+                        </div>
                     </div>
 
                     <form method="POST" class="needs-validation" novalidate>
                         <div class="mb-4">
-                            <label class="form-label">Who will win?</label>
-                            <div class="d-flex justify-content-center gap-3">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="predicted_winner" 
-                                           id="home_team" value="{{ match.home_team_id }}" required>
-                                    <label class="form-check-label" for="home_team">
-                                        {{ match.home_team.name }}
-                                    </label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="predicted_winner" 
-                                           id="away_team" value="{{ match.away_team_id }}" required>
-                                    <label class="form-check-label" for="away_team">
-                                        {{ match.away_team.name }}
-                                    </label>
-                                </div>
+                            <h5 class="text-center mb-4">Who will win?</h5>
+                            <div class="prediction-options">
+                                <label class="team-option" for="home_team">
+                                    <input class="form-check-input visually-hidden" type="radio" 
+                                           name="predicted_winner" id="home_team" 
+                                           value="{{ match.home_team_id }}" required>
+                                    <h5 class="mb-0">{{ match.home_team.name }}</h5>
+                                </label>
+                                
+                                <label class="team-option" for="away_team">
+                                    <input class="form-check-input visually-hidden" type="radio" 
+                                           name="predicted_winner" id="away_team" 
+                                           value="{{ match.away_team_id }}" required>
+                                    <h5 class="mb-0">{{ match.away_team.name }}</h5>
+                                </label>
                             </div>
                         </div>
 
-                        <div class="mb-4">
-                            <label for="confidence" class="form-label">How confident are you? (0-100%)</label>
+                        <div class="confidence-slider">
+                            <h5 class="text-center mb-4">How confident are you?</h5>
+                            <div class="confidence-value">
+                                <span id="confidenceValue">50%</span>
+                            </div>
                             <input type="range" class="form-range" id="confidence" name="confidence"
                                    min="0" max="100" step="1" value="50"
                                    oninput="confidenceValue.textContent = this.value + '%'">
-                            <div class="text-center">
-                                <span id="confidenceValue">50%</span>
-                            </div>
                         </div>
 
                         <div class="mb-4">
-                            <label for="analysis" class="form-label">Analysis (Optional)</label>
-                            <textarea class="form-control" id="analysis" name="analysis" rows="4"
-                                      placeholder="Share your thoughts on why you think this team will win..."></textarea>
+                            <h5 class="text-center mb-4">Share your analysis (Optional)</h5>
+                            <textarea class="form-control analysis-input" id="analysis" name="analysis" 
+                                    rows="4" placeholder="Why do you think this team will win?"></textarea>
                         </div>
 
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary">Submit Prediction</button>
-                            <a href="{{ url_for('main.matches') }}" class="btn btn-outline-secondary">Cancel</a>
+                        <div class="d-grid gap-3">
+                            <button type="submit" class="btn btn-primary submit-btn">Submit Prediction</button>
+                            <a href="{{ url_for('main.matches') }}" class="btn btn-outline-secondary cancel-btn">Cancel</a>
                         </div>
                     </form>
                 </div>
@@ -88,6 +228,15 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             form.classList.add('was-validated');
         }, false);
+    });
+
+    // Team selection highlight
+    const teamOptions = document.querySelectorAll('.team-option');
+    teamOptions.forEach(option => {
+        option.addEventListener('click', () => {
+            teamOptions.forEach(opt => opt.classList.remove('selected'));
+            option.classList.add('selected');
+        });
     });
 });
 </script>
