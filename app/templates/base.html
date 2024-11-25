@@ -200,38 +200,42 @@
                             <i class="fas fa-newspaper me-2"></i>News
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'main.predictions' %}active{% endif %}" href="{{ url_for('main.predictions') }}">
-                            <i class="fas fa-chart-line me-2"></i>Predictions
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'main.team_stats' %}active{% endif %}" href="{{ url_for('main.team_stats') }}">
-                            <i class="fas fa-trophy me-2"></i>Team Stats
-                        </a>
-                    </li>
-                    {% if current_user.is_authenticated %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('main.profile') }}">
-                                <i class="fas fa-user me-1"></i>Profile
-                            </a>
-                        </li>
-                    {% endif %}
                 </ul>
-                <div class="navbar-nav">
-                    {% if current_user.is_authenticated %}
-                        <a class="nav-link" href="{{ url_for('auth.logout') }}">
-                            <i class="fas fa-sign-out-alt me-1"></i>Logout
-                        </a>
-                    {% else %}
-                        <a class="nav-link" href="{{ url_for('auth.login') }}">
-                            <i class="fas fa-sign-in-alt me-1"></i>Login
-                        </a>
-                        <a class="nav-link" href="{{ url_for('auth.register') }}">
-                            <i class="fas fa-user-plus me-1"></i>Register
-                        </a>
-                    {% endif %}
+                {% if current_user.is_authenticated %}
+                <div class="d-flex align-items-center">
+                    <a href="{{ url_for('main.matches') }}" class="btn btn-primary me-3">
+                        <i class="fas fa-chart-line me-1"></i>Make Prediction
+                    </a>
+                    <div class="dropdown">
+                        <button class="btn btn-outline-light dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown">
+                            <i class="fas fa-user me-1"></i>{{ current_user.username }}
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('main.profile', username=current_user.username) }}">
+                                    <i class="fas fa-user-circle me-2"></i>Profile
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('main.predictions') }}">
+                                    <i class="fas fa-chart-bar me-2"></i>My Predictions
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">
+                                    <i class="fas fa-sign-out-alt me-2"></i>Logout
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
+                {% else %}
+                <div class="d-flex">
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-outline-light me-2">Login</a>
+                    <a href="{{ url_for('auth.register') }}" class="btn btn-primary">Register</a>
+                </div>
+                {% endif %}
             </div>
         </div>
     </nav>
