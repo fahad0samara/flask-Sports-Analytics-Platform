@@ -229,6 +229,101 @@
             font-size: 1.1rem;
         }
     }
+
+    /* Modal Styles */
+    .modal-content {
+        border-radius: 20px;
+        border: none;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+    .modal-header {
+        background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
+        color: white;
+        border-radius: 20px 20px 0 0;
+        padding: 1.5rem;
+    }
+
+    .modal-title {
+        font-weight: 700;
+        font-size: 1.5rem;
+    }
+
+    .btn-close {
+        filter: brightness(0) invert(1);
+    }
+
+    .match-teams {
+        background: #F9FAFB;
+        padding: 2rem;
+        border-radius: 15px;
+    }
+
+    .team-name {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1F2937;
+        margin-bottom: 1rem;
+    }
+
+    .vs-badge {
+        background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
+        color: white;
+        padding: 0.5rem 1.5rem;
+        border-radius: 25px;
+        font-weight: 700;
+        font-size: 1.2rem;
+    }
+
+    .probability-value {
+        font-size: 2rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        border: 1px solid rgba(99, 102, 241, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+    }
+
+    .stat-label {
+        color: #6B7280;
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1F2937;
+    }
+
+    .head-to-head {
+        border: 1px solid rgba(99, 102, 241, 0.1);
+    }
+
+    .list-group-item {
+        border-left: 4px solid #6366F1;
+        margin-bottom: 0.5rem;
+        border-radius: 8px;
+        padding: 1rem;
+        background: #F9FAFB;
+        border-top: 1px solid rgba(99, 102, 241, 0.1);
+        border-right: 1px solid rgba(99, 102, 241, 0.1);
+        border-bottom: 1px solid rgba(99, 102, 241, 0.1);
+    }
 </style>
 {% endblock %}
 
@@ -367,13 +462,151 @@
         {% endfor %}
     </div>
 </div>
+
+<!-- Prediction Details Modal -->
+<div class="modal fade" id="predictionModal" tabindex="-1" aria-labelledby="predictionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="predictionModalLabel">Match Analysis</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="matchDetails" class="p-3">
+                    <div class="match-teams mb-4">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="team home-team text-center">
+                                <h3 class="team-name" id="modalHomeTeam"></h3>
+                                <div class="win-probability">
+                                    <span id="modalHomeProbability" class="probability-value"></span>
+                                </div>
+                            </div>
+                            <div class="vs-badge">VS</div>
+                            <div class="team away-team text-center">
+                                <h3 class="team-name" id="modalAwayTeam"></h3>
+                                <div class="win-probability">
+                                    <span id="modalAwayProbability" class="probability-value"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="detailed-stats">
+                        <h4 class="mb-3">Detailed Statistics</h4>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="stat-card mb-3">
+                                    <div class="stat-label">Expected Goals</div>
+                                    <div class="stat-value" id="modalExpectedGoals"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="stat-card mb-3">
+                                    <div class="stat-label">Possession</div>
+                                    <div class="stat-value" id="modalPossession"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="stat-card mb-3">
+                                    <div class="stat-label">Expected Shots</div>
+                                    <div class="stat-value" id="modalExpectedShots"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="stat-card mb-3">
+                                    <div class="stat-label">Form Rating</div>
+                                    <div class="stat-value" id="modalFormRating"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="historical-data mt-4">
+                        <h4 class="mb-3">Historical Performance</h4>
+                        <div class="head-to-head p-3 rounded bg-light">
+                            <h5 class="mb-3">Head-to-Head Record</h5>
+                            <div id="headToHeadStats"></div>
+                        </div>
+                    </div>
+
+                    <div class="key-factors mt-4">
+                        <h4 class="mb-3">Key Factors</h4>
+                        <ul class="list-group" id="keyFactorsList">
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
+const matchData = {
+    {% for match in matches %}
+    "{{ match.id }}": {
+        homeTeam: "{{ match.home_team.name }}",
+        awayTeam: "{{ match.away_team.name }}",
+        homeWinProbability: "{{ match.home_win_probability }}%",
+        awayWinProbability: "{{ match.away_win_probability }}%",
+        expectedGoals: "{{ match.total_goals_prediction }}",
+        possession: "{{ match.possession_home }}%",
+        expectedShots: "{{ match.shots_prediction }}",
+        formRating: "8.5",  // Example value
+        headToHead: [
+            "Last 5 meetings: 3 wins, 1 draw, 1 loss",
+            "Average goals per game: 2.8",
+            "Clean sheets: 2"
+        ],
+        keyFactors: [
+            "Strong home record this season",
+            "Key player returns from injury",
+            "Historical advantage in head-to-head matches",
+            "Recent form shows improving trend"
+        ]
+    },
+    {% endfor %}
+};
+
 function showPredictionDetails(matchId) {
-    // TODO: Implement prediction details modal
-    console.log('Show prediction details for match:', matchId);
+    const match = matchData[matchId];
+    if (!match) return;
+
+    // Update modal content
+    document.getElementById('modalHomeTeam').textContent = match.homeTeam;
+    document.getElementById('modalAwayTeam').textContent = match.awayTeam;
+    document.getElementById('modalHomeProbability').textContent = match.homeWinProbability;
+    document.getElementById('modalAwayProbability').textContent = match.awayWinProbability;
+    document.getElementById('modalExpectedGoals').textContent = match.expectedGoals;
+    document.getElementById('modalPossession').textContent = match.possession;
+    document.getElementById('modalExpectedShots').textContent = match.expectedShots;
+    document.getElementById('modalFormRating').textContent = match.formRating;
+
+    // Update head-to-head stats
+    const headToHeadHtml = match.headToHead.map(stat => `<div class="mb-2">${stat}</div>`).join('');
+    document.getElementById('headToHeadStats').innerHTML = headToHeadHtml;
+
+    // Update key factors
+    const keyFactorsHtml = match.keyFactors.map(factor => 
+        `<li class="list-group-item">${factor}</li>`
+    ).join('');
+    document.getElementById('keyFactorsList').innerHTML = keyFactorsHtml;
+
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('predictionModal'));
+    modal.show();
 }
+
+// Initialize all tooltips
+document.addEventListener('DOMContentLoaded', function() {
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function(tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
 </script>
 {% endblock %}
