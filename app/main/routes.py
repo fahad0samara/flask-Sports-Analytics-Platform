@@ -7,8 +7,31 @@ from app.main import bp
 from app.models import User, Sport, League, Team, Match, News, Analysis, Prediction
 
 @bp.route('/')
-@login_required
 def index():
+    """Landing page with live matches and platform statistics"""
+    if not current_user.is_authenticated:
+        # Get platform statistics for landing page
+        total_matches = Match.query.count()
+        total_users = User.query.count()
+        total_predictions = Analysis.query.count()
+        
+        # Get featured matches and news
+        featured_matches = Match.query.filter_by(status='live').order_by(Match.start_time.desc()).limit(6).all()
+        latest_news = News.query.order_by(News.created_at.desc()).limit(5).all()
+        trending_news = News.query.order_by(News.views.desc()).limit(5).all()
+        top_leagues = League.query.order_by(League.name).limit(5).all()
+        
+        return render_template('main/landing.html',
+            total_matches=total_matches,
+            total_users=total_users,
+            total_predictions=total_predictions,
+            featured_matches=featured_matches,
+            latest_news=latest_news,
+            trending_news=trending_news,
+            top_leagues=top_leagues,
+            now=datetime.utcnow()
+        )
+
     # Get user's predictions
     user_predictions = Prediction.query.filter_by(user_id=current_user.id).all()
     total_predictions = len(user_predictions)
