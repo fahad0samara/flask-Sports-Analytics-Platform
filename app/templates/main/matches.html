@@ -235,14 +235,106 @@
             padding: 0.8rem;
         }
     }
+
+    .prediction-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        padding: 0.4rem 1rem;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        z-index: 10;
+    }
+    
+    .predicted {
+        background: rgba(40, 167, 69, 0.9);
+        color: white;
+    }
+    
+    .not-predicted {
+        background: rgba(220, 53, 69, 0.9);
+        color: white;
+    }
+    
+    .match-stats {
+        display: flex;
+        justify-content: space-around;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 10px;
+        margin-top: 1rem;
+    }
+    
+    .stat-item {
+        text-align: center;
+    }
+    
+    .stat-label {
+        font-size: 0.8rem;
+        color: #6c757d;
+        margin-bottom: 0.2rem;
+    }
+    
+    .stat-value {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #1e3c72;
+    }
+    
+    .match-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .action-btn {
+        flex: 1;
+        padding: 0.5rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        text-align: center;
+        text-decoration: none;
+    }
+    
+    .predict-btn {
+        background: #1e3c72;
+        color: white;
+    }
+    
+    .predict-btn:hover {
+        background: #2a5298;
+        transform: translateY(-2px);
+        color: white;
+    }
+    
+    .analysis-btn {
+        background: #f8f9fa;
+        color: #1e3c72;
+        border: 1px solid #1e3c72;
+    }
+    
+    .analysis-btn:hover {
+        background: #e9ecef;
+        transform: translateY(-2px);
+        color: #1e3c72;
+    }
+    
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.6; }
+        100% { opacity: 1; }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="page-header">
     <div class="container">
-        <h1 class="mb-0">Live Sports Matches</h1>
-        <p class="mb-0 mt-2 text-light">Follow your favorite teams and matches in real-time</p>
+        <h1 class="mb-2">Live Sports Matches</h1>
+        <p class="mb-0">Follow your favorite teams and matches in real-time</p>
     </div>
 </div>
 
@@ -252,51 +344,46 @@
         <h5 class="filter-title">
             <i class="fas fa-filter me-2"></i>Filter Matches
         </h5>
-        <form method="get" class="row g-3">
-            <div class="col-md-4">
+        <div class="row">
+            <div class="col-md-6">
                 <div class="filter-group">
-                    <label class="form-label text-muted">Sport</label>
-                    <select name="sport" class="form-select">
-                        <option value="">All Sports</option>
-                        {% for sport in sports %}
-                        <option value="{{ sport.id }}" {% if selected_sport == sport.id %}selected{% endif %}>
-                            {{ sport.name }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="filter-group">
-                    <label class="form-label text-muted">Status</label>
-                    <select name="status" class="form-select">
-                        <option value="">All Status</option>
-                        <option value="live" {% if selected_status == 'live' %}selected{% endif %}>Live Matches</option>
-                        <option value="upcoming" {% if selected_status == 'upcoming' %}selected{% endif %}>Upcoming</option>
-                        <option value="finished" {% if selected_status == 'finished' %}selected{% endif %}>Finished</option>
-                    </select>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="filter-group">
-                    <label class="form-label text-muted">Date Range</label>
+                    <label class="mb-2">Date</label>
                     <div class="date-filter">
-                        <button type="submit" name="date" value="today" 
-                                class="date-btn {% if selected_date == 'today' %}active{% endif %}">
-                            <i class="fas fa-calendar-day me-1"></i>Today
-                        </button>
-                        <button type="submit" name="date" value="tomorrow" 
-                                class="date-btn {% if selected_date == 'tomorrow' %}active{% endif %}">
-                            <i class="fas fa-calendar-plus me-1"></i>Tomorrow
-                        </button>
-                        <button type="submit" name="date" value="week" 
-                                class="date-btn {% if selected_date == 'week' %}active{% endif %}">
-                            <i class="fas fa-calendar-week me-1"></i>This Week
-                        </button>
+                        <a href="{{ url_for('main.matches', date_filter='today') }}" 
+                           class="date-btn {% if request.args.get('date_filter') == 'today' %}active{% endif %}">
+                            Today
+                        </a>
+                        <a href="{{ url_for('main.matches', date_filter='tomorrow') }}"
+                           class="date-btn {% if request.args.get('date_filter') == 'tomorrow' %}active{% endif %}">
+                            Tomorrow
+                        </a>
+                        <a href="{{ url_for('main.matches', date_filter='week') }}"
+                           class="date-btn {% if request.args.get('date_filter') == 'week' %}active{% endif %}">
+                            This Week
+                        </a>
                     </div>
                 </div>
             </div>
-        </form>
+            <div class="col-md-6">
+                <div class="filter-group">
+                    <label class="mb-2">Status</label>
+                    <div class="date-filter">
+                        <a href="{{ url_for('main.matches', status='live') }}"
+                           class="date-btn {% if request.args.get('status') == 'live' %}active{% endif %}">
+                            Live
+                        </a>
+                        <a href="{{ url_for('main.matches', status='scheduled') }}"
+                           class="date-btn {% if request.args.get('status') == 'scheduled' %}active{% endif %}">
+                            Upcoming
+                        </a>
+                        <a href="{{ url_for('main.matches', status='finished') }}"
+                           class="date-btn {% if request.args.get('status') == 'finished' %}active{% endif %}">
+                            Finished
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Matches Grid -->
@@ -305,55 +392,82 @@
             {% for match in matches %}
             <div class="col-md-6 col-lg-4">
                 <div class="match-card">
+                    {% if current_user.has_predicted(match) %}
+                        <div class="prediction-badge predicted">
+                            <i class="fas fa-check-circle me-1"></i>Predicted
+                        </div>
+                    {% else %}
+                        <div class="prediction-badge not-predicted">
+                            <i class="fas fa-exclamation-circle me-1"></i>Not Predicted
+                        </div>
+                    {% endif %}
+                    
                     <div class="match-header">
                         <div class="d-flex justify-content-between align-items-center">
-                            <div class="d-flex align-items-center">
-                                <i class="fas fa-trophy me-2"></i>
-                                <div>
-                                    <div class="league-name">{{ match.sport.name }}</div>
-                                    <div>{{ match.league.name }}</div>
-                                </div>
-                            </div>
-                            <span class="match-time">
-                                <i class="far fa-clock me-1"></i>
-                                {{ match.start_time.strftime('%H:%M') }}
-                            </span>
+                            <span class="league-name">{{ match.league.name }}</span>
+                            <span class="match-time">{{ match.start_time.strftime('%H:%M') }}</span>
                         </div>
                     </div>
+                    
                     <div class="match-body">
                         <div class="team-section">
-                            <span class="team-name text-end">{{ match.home_team.name }}</span>
-                            <span class="team-score">{{ match.home_score if match.home_score is not none else '-' }}</span>
+                            <div class="team-name">{{ match.home_team.name }}</div>
+                            <div class="team-score">{{ match.home_score }}</div>
                         </div>
+                        
                         <div class="text-center">
                             <span class="vs-badge">VS</span>
                         </div>
+                        
                         <div class="team-section">
-                            <span class="team-name">{{ match.away_team.name }}</span>
-                            <span class="team-score">{{ match.away_score if match.away_score is not none else '-' }}</span>
+                            <div class="team-name">{{ match.away_team.name }}</div>
+                            <div class="team-score">{{ match.away_score }}</div>
+                        </div>
+                        
+                        <div class="match-stats">
+                            <div class="stat-item">
+                                <div class="stat-label">Total Predictions</div>
+                                <div class="stat-value">{{ match.predictions.count() }}</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Home Win</div>
+                                <div class="stat-value">{{ "%.0f"|format(match.get_prediction_stats()['home_win_percentage']) }}%</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Away Win</div>
+                                <div class="stat-value">{{ "%.0f"|format(match.get_prediction_stats()['away_win_percentage']) }}%</div>
+                            </div>
+                        </div>
+                        
+                        <div class="match-actions">
+                            {% if match.status == 'scheduled' and not current_user.has_predicted(match) %}
+                                <a href="{{ url_for('main.predict_match', match_id=match.id) }}" class="action-btn predict-btn">
+                                    <i class="fas fa-chart-line me-2"></i>Make Prediction
+                                </a>
+                            {% endif %}
+                            <a href="{{ url_for('main.match_detail', match_id=match.id) }}" class="action-btn analysis-btn">
+                                <i class="fas fa-chart-bar me-2"></i>View Analysis
+                            </a>
                         </div>
                     </div>
+                    
                     <div class="match-footer">
-                        <span class="status-badge status-{{ match.status }}">
-                            {% if match.status == 'live' %}
-                                <i class="fas fa-circle me-1"></i>
-                            {% endif %}
+                        <div class="status-badge {% if match.status == 'live' %}status-live{% elif match.status == 'scheduled' %}status-upcoming{% endif %}">
                             {{ match.status.upper() }}
-                        </span>
-                        <span class="match-date">
-                            <i class="far fa-calendar-alt me-1"></i>
-                            {{ match.start_time.strftime('%d %b %Y') }}
-                        </span>
+                        </div>
+                        {% if match.status == 'live' %}
+                            <div class="text-danger">
+                                <i class="fas fa-circle me-1"></i>LIVE
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
             {% endfor %}
         {% else %}
-            <div class="col-12">
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i>
-                    No matches found matching your criteria.
-                </div>
+            <div class="col-12 text-center py-5">
+                <h3 class="text-muted">No matches found</h3>
+                <p>Try adjusting your filters or check back later</p>
             </div>
         {% endif %}
     </div>
@@ -363,22 +477,21 @@
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Add active class to date buttons
-        const dateButtons = document.querySelectorAll('.date-btn');
-        dateButtons.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                dateButtons.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
+        // Handle filter button clicks
+        const filterButtons = document.querySelectorAll('.date-btn');
+        filterButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                filterButtons.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
             });
         });
-
-        // Auto-submit form when filters change
-        const filterSelects = document.querySelectorAll('select');
-        filterSelects.forEach(select => {
-            select.addEventListener('change', () => {
-                select.closest('form').submit();
-            });
-        });
+        
+        // Auto-refresh for live matches
+        {% if request.args.get('status') == 'live' %}
+        setInterval(function() {
+            location.reload();
+        }, 60000); // Refresh every minute for live matches
+        {% endif %}
     });
 </script>
 {% endblock %}

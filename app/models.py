@@ -29,6 +29,14 @@ class User(UserMixin, db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
     
+    def has_predicted(self, match):
+        """Check if user has made a prediction for a specific match"""
+        return self.predictions.filter_by(match_id=match.id).first() is not None
+    
+    def get_prediction(self, match):
+        """Get user's prediction for a specific match"""
+        return self.predictions.filter_by(match_id=match.id).first()
+    
     def get_statistics(self):
         """Get comprehensive user statistics"""
         try:
@@ -188,12 +196,12 @@ class Match(db.Model):
     def validate_status(self):
         """Validate match status"""
         if self.status not in self.VALID_STATUSES:
-            raise ValueError(f"Invalid match status: {self.status}")
+            raise ValueError(f"Invalid status: {self.status}")
     
     def validate_teams(self):
         """Validate that home and away teams are different"""
         if self.home_team_id == self.away_team_id:
-            raise ValueError("Home and away teams cannot be the same")
+            raise ValueError("Home and away teams must be different")
     
     def update_score(self, home_score, away_score):
         """Update match score with validation"""
@@ -204,7 +212,6 @@ class Match(db.Model):
         
         self.home_score = home_score
         self.away_score = away_score
-        self.last_updated = datetime.utcnow()
         
         # Update winner if match is finished
         if self.status == self.STATUS_FINISHED:
@@ -214,83 +221,73 @@ class Match(db.Model):
                 self.winner_id = self.away_team_id
             else:
                 self.winner_id = None
-
+    
     def get_time_status(self):
         """Get a human-readable time status"""
         if self.status == self.STATUS_LIVE:
-            minutes = int((datetime.utcnow() - self.start_time).total_seconds() / 60)
-            return f"{minutes}'"
+            return "LIVE"
         elif self.status == self.STATUS_FINISHED:
             return "Finished"
-        elif self.status == self.STATUS_SCHEDULED:
-            if self.start_time.date() == datetime.utcnow().date():
-                return self.start_time.strftime('%H:%M')
-            return self.start_time.strftime('%d %b, %H:%M')
-        return self.status.capitalize()
-
+        else:
+            now = datetime.utcnow()
+            if self.start_time > now:
+                time_diff = self.start_time - now
+                if time_diff.days > 0:
+                    return f"In {time_diff.days} days"
+                elif time_diff.seconds > 3600:
+                    return f"In {time_diff.seconds // 3600} hours"
+                else:
+                    return f"In {time_diff.seconds // 60} minutes"
+            else:
+                return self.status.capitalize()
+    
+    def get_prediction_stats(self):
+        """Get prediction statistics for this match"""
+        total_predictions = self.predictions.count()
+        if total_predictions == 0:
+            return {
+                'total_predictions': 0,
+                'home_win_percentage': 0,
+                'away_win_percentage': 0,
+                'home_win_count': 0,
+                'away_win_count': 0,
+                'average_confidence': 0
+            }
+        
+        home_wins = self.predictions.filter_by(predicted_winner_id=self.home_team_id).count()
+        away_wins = self.predictions.filter_by(predicted_winner_id=self.away_team_id).count()
+        
+        # Calculate average confidence
+        total_confidence = sum(p.confidence for p in self.predictions)
+        avg_confidence = total_confidence / total_predictions
+        
+        return {
+            'total_predictions': total_predictions,
+            'home_win_percentage': (home_wins / total_predictions) * 100,
+            'away_win_percentage': (away_wins / total_predictions) * 100,
+            'home_win_count': home_wins,
+            'away_win_count': away_wins,
+            'average_confidence': avg_confidence
+        }
+    
     def to_dict(self):
         """Convert match to dictionary"""
         return {
             'id': self.id,
             'home_team': self.home_team.name,
             'away_team': self.away_team.name,
+            'start_time': self.start_time.isoformat(),
+            'status': self.status,
             'home_score': self.home_score,
             'away_score': self.away_score,
-            'status': self.status,
-            'start_time': self.start_time.isoformat(),
-            'sport': self.sport.name,
-            'league': self.league.name
-        }
-    
-    def get_winner(self):
-        """Get the winning team of the match"""
-        if self.status != self.STATUS_FINISHED:
-            return None
-        if self.home_score > self.away_score:
-            return self.home_team
-        elif self.away_score > self.home_score:
-            return self.away_team
-        return None
-    
-    def get_score_display(self):
-        """Get a formatted score string"""
-        return f"{self.home_score} - {self.away_score}"
-    
-    def get_prediction_stats(self):
-        """Get prediction statistics for this match"""
-        total = self.predictions.count()
-        if total == 0:
-            return {'total': 0, 'home': 0, 'away': 0, 'home_percentage': 0, 'away_percentage': 0}
-        
-        home_predictions = self.predictions.filter_by(predicted_winner_id=self.home_team_id).count()
-        away_predictions = total - home_predictions
-        
-        return {
-            'total': total,
-            'home': home_predictions,
-            'away': away_predictions,
-            'home_percentage': round((home_predictions / total) * 100, 1),
-            'away_percentage': round((away_predictions / total) * 100, 1)
-        }
-    
-    def get_match_stats(self):
-        """Get detailed match statistics"""
-        return {
-            'id': self.id,
-            'home_team': self.home_team.name,
-            'away_team': self.away_team.name,
-            'sport': self.sport.name,
             'league': self.league.name,
-            'start_time': self.start_time.isoformat(),
-            'status': self.status,
-            'score': self.get_score_display(),
-            'winner': self.get_winner().name if self.get_winner() else None,
-            'predictions': self.get_prediction_stats(),
-            'last_updated': self.last_updated.isoformat()
+            'sport': self.sport.name,
+            'prediction_stats': self.get_prediction_stats(),
+            'time_status': self.get_time_status()
         }
     
     def __repr__(self):
-        return f'<Match {self.home_team.name} vs {self.away_team.name}>'
+        return f'<Match {self.id}: {self.home_team.name} vs {self.away_team.name}>'
 
 class League(db.Model):
     id = db.Column(db.Integer, primary_key=True)
