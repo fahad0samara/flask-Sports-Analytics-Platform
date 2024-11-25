@@ -1,0 +1,361 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Live Matches Overview -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Live Matches</h5>
+                    <div class="btn-group">
+                        <button class="btn btn-outline-primary active" data-filter="all">All</button>
+                        {% for sport in sports %}
+                        <button class="btn btn-outline-primary" data-filter="{{ sport.id }}">{{ sport.name }}</button>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row" id="liveMatchesContainer">
+                        {% for match in live_matches %}
+                        <div class="col-md-6 col-xl-4 mb-4" data-sport="{{ match.sport_id }}">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <span class="badge bg-danger">LIVE</span>
+                                        <span class="text-muted">{{ match.time_elapsed }}'</span>
+                                    </div>
+                                    <div class="row text-center">
+                                        <div class="col-5">
+                                            <img src="{{ match.home_team.logo_url }}" alt="{{ match.home_team.name }}" class="team-logo mb-2">
+                                            <h6>{{ match.home_team.name }}</h6>
+                                        </div>
+                                        <div class="col-2 d-flex align-items-center justify-content-center">
+                                            <h4>{{ match.home_score }} - {{ match.away_score }}</h4>
+                                        </div>
+                                        <div class="col-5">
+                                            <img src="{{ match.away_team.logo_url }}" alt="{{ match.away_team.name }}" class="team-logo mb-2">
+                                            <h6>{{ match.away_team.name }}</h6>
+                                        </div>
+                                    </div>
+                                    <div class="mt-3">
+                                        <h6>Key Events</h6>
+                                        <div class="timeline">
+                                            {% for event in match.events %}
+                                            <div class="timeline-item">
+                                                <span class="time">{{ event.minute }}'</span>
+                                                <span class="event">
+                                                    {% if event.type == 'goal' %}
+                                                    <i class="fas fa-futbol text-success"></i>
+                                                    {% elif event.type == 'yellow_card' %}
+                                                    <i class="fas fa-square text-warning"></i>
+                                                    {% elif event.type == 'red_card' %}
+                                                    <i class="fas fa-square text-danger"></i>
+                                                    {% elif event.type == 'substitution' %}
+                                                    <i class="fas fa-exchange-alt text-info"></i>
+                                                    {% endif %}
+                                                    {{ event.description }}
+                                                </span>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    <div class="mt-3">
+                                        <h6>Match Stats</h6>
+                                        <div class="match-stats">
+                                            <div class="stat-row">
+                                                <div class="progress">
+                                                    <div class="progress-bar bg-primary" style="width: {{ match.stats.possession.home }}%"></div>
+                                                </div>
+                                                <span class="stat-label">Possession</span>
+                                                <div class="stat-values">
+                                                    <span>{{ match.stats.possession.home }}%</span>
+                                                    <span>{{ match.stats.possession.away }}%</span>
+                                                </div>
+                                            </div>
+                                            <div class="stat-row">
+                                                <div class="progress">
+                                                    <div class="progress-bar bg-primary" style="width: {{ (match.stats.shots.home / (match.stats.shots.home + match.stats.shots.away) * 100)|round }}%"></div>
+                                                </div>
+                                                <span class="stat-label">Shots</span>
+                                                <div class="stat-values">
+                                                    <span>{{ match.stats.shots.home }}</span>
+                                                    <span>{{ match.stats.shots.away }}</span>
+                                                </div>
+                                            </div>
+                                            <div class="stat-row">
+                                                <div class="progress">
+                                                    <div class="progress-bar bg-primary" style="width: {{ (match.stats.shots_on_target.home / (match.stats.shots_on_target.home + match.stats.shots_on_target.away) * 100)|round }}%"></div>
+                                                </div>
+                                                <span class="stat-label">Shots on Target</span>
+                                                <div class="stat-values">
+                                                    <span>{{ match.stats.shots_on_target.home }}</span>
+                                                    <span>{{ match.stats.shots_on_target.away }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-footer">
+                                    <button class="btn btn-primary btn-sm w-100" onclick="window.location.href='{{ url_for('main.match_details', match_id=match.id) }}'">
+                                        View Details
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upcoming Matches -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Upcoming Matches</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Sport</th>
+                                    <th>Home Team</th>
+                                    <th>Away Team</th>
+                                    <th>Prediction</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for match in upcoming_matches %}
+                                <tr>
+                                    <td>{{ match.start_time.strftime('%H:%M') }}</td>
+                                    <td>{{ match.sport.name }}</td>
+                                    <td>{{ match.home_team.name }}</td>
+                                    <td>{{ match.away_team.name }}</td>
+                                    <td>
+                                        {% if match.prediction %}
+                                        <span class="badge bg-primary">{{ match.prediction.predicted_winner.name }}</span>
+                                        <small class="text-muted">({{ (match.prediction.confidence * 100)|round }}%)</small>
+                                        {% else %}
+                                        <button class="btn btn-sm btn-outline-primary" onclick="window.location.href='{{ url_for('predictions.predict_match', match_id=match.id) }}'">
+                                            Predict
+                                        </button>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-secondary" onclick="window.location.href='{{ url_for('main.match_details', match_id=match.id) }}'">
+                                            Details
+                                        </button>
+                                        {% if not match.prediction %}
+                                        <button class="btn btn-sm btn-outline-primary ms-2" onclick="window.location.href='{{ url_for('predictions.predict_match', match_id=match.id) }}'">
+                                            Predict
+                                        </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- WebSocket Connection Status -->
+<div class="position-fixed bottom-0 end-0 p-3">
+    <div class="toast" role="alert" id="wsStatus">
+        <div class="toast-header">
+            <strong class="me-auto">Connection Status</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body">
+            <span id="wsStatusText">Connecting...</span>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+.team-logo {
+    max-width: 60px;
+    height: auto;
+}
+
+.timeline {
+    position: relative;
+    padding: 20px 0;
+    list-style: none;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.timeline-item {
+    position: relative;
+    padding-left: 24px;
+    margin-bottom: 10px;
+}
+
+.timeline-item:before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: #e9ecef;
+}
+
+.timeline-item .time {
+    font-weight: bold;
+    margin-right: 8px;
+}
+
+.match-stats .stat-row {
+    margin-bottom: 10px;
+}
+
+.match-stats .stat-label {
+    display: block;
+    margin: 5px 0;
+    font-size: 0.875rem;
+}
+
+.match-stats .stat-values {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.875rem;
+}
+
+.match-stats .progress {
+    height: 8px;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// WebSocket connection
+const ws = new WebSocket('ws://' + window.location.host + '/ws/live-matches');
+const wsStatus = new bootstrap.Toast(document.getElementById('wsStatus'));
+
+ws.onopen = function() {
+    document.getElementById('wsStatusText').textContent = 'Connected';
+    wsStatus.show();
+    setTimeout(() => wsStatus.hide(), 3000);
+};
+
+ws.onclose = function() {
+    document.getElementById('wsStatusText').textContent = 'Disconnected';
+    wsStatus.show();
+};
+
+ws.onmessage = function(event) {
+    const data = JSON.parse(event.data);
+    updateMatchData(data);
+};
+
+function updateMatchData(data) {
+    const matchElement = document.querySelector(`[data-match-id="${data.match_id}"]`);
+    if (!matchElement) return;
+
+    // Update score
+    matchElement.querySelector('.score').textContent = `${data.home_score} - ${data.away_score}`;
+    
+    // Update time elapsed
+    matchElement.querySelector('.time-elapsed').textContent = `${data.time_elapsed}'`;
+    
+    // Update stats
+    updateMatchStats(matchElement, data.stats);
+    
+    // Add new events
+    if (data.new_events && data.new_events.length > 0) {
+        const timeline = matchElement.querySelector('.timeline');
+        data.new_events.forEach(event => {
+            const eventElement = createEventElement(event);
+            timeline.insertBefore(eventElement, timeline.firstChild);
+        });
+    }
+}
+
+function updateMatchStats(matchElement, stats) {
+    // Update possession
+    const possessionBar = matchElement.querySelector('.possession-stat .progress-bar');
+    possessionBar.style.width = `${stats.possession.home}%`;
+    matchElement.querySelector('.possession-home').textContent = `${stats.possession.home}%`;
+    matchElement.querySelector('.possession-away').textContent = `${stats.possession.away}%`;
+    
+    // Update shots
+    const shotsBar = matchElement.querySelector('.shots-stat .progress-bar');
+    const shotsPercentage = (stats.shots.home / (stats.shots.home + stats.shots.away) * 100);
+    shotsBar.style.width = `${shotsPercentage}%`;
+    matchElement.querySelector('.shots-home').textContent = stats.shots.home;
+    matchElement.querySelector('.shots-away').textContent = stats.shots.away;
+    
+    // Update shots on target
+    const sotBar = matchElement.querySelector('.shots-on-target-stat .progress-bar');
+    const sotPercentage = (stats.shots_on_target.home / (stats.shots_on_target.home + stats.shots_on_target.away) * 100);
+    sotBar.style.width = `${sotPercentage}%`;
+    matchElement.querySelector('.sot-home').textContent = stats.shots_on_target.home;
+    matchElement.querySelector('.sot-away').textContent = stats.shots_on_target.away;
+}
+
+function createEventElement(event) {
+    const div = document.createElement('div');
+    div.className = 'timeline-item';
+    
+    let icon = '';
+    switch(event.type) {
+        case 'goal':
+            icon = '<i class="fas fa-futbol text-success"></i>';
+            break;
+        case 'yellow_card':
+            icon = '<i class="fas fa-square text-warning"></i>';
+            break;
+        case 'red_card':
+            icon = '<i class="fas fa-square text-danger"></i>';
+            break;
+        case 'substitution':
+            icon = '<i class="fas fa-exchange-alt text-info"></i>';
+            break;
+    }
+    
+    div.innerHTML = `
+        <span class="time">${event.minute}'</span>
+        <span class="event">
+            ${icon}
+            ${event.description}
+        </span>
+    `;
+    
+    return div;
+}
+
+// Filter matches by sport
+document.querySelectorAll('[data-filter]').forEach(button => {
+    button.addEventListener('click', function() {
+        const sportId = this.dataset.filter;
+        const matches = document.querySelectorAll('#liveMatchesContainer > div');
+        
+        // Update active button
+        document.querySelectorAll('[data-filter]').forEach(btn => btn.classList.remove('active'));
+        this.classList.add('active');
+        
+        // Filter matches
+        matches.forEach(match => {
+            if (sportId === 'all' || match.dataset.sport === sportId) {
+                match.style.display = '';
+            } else {
+                match.style.display = 'none';
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

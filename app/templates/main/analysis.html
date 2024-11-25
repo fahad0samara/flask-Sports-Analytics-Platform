@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Sport Selection -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form class="row g-3 align-items-center" method="GET">
+                        <div class="col-md-4">
+                            <label class="form-label">Select Sport</label>
+                            <select class="form-select" name="sport" id="sportSelect">
+                                {% for sport in sports %}
+                                <option value="{{ sport.id }}" {% if selected_sport and selected_sport.id == sport.id %}selected{% endif %}>
+                                    {{ sport.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Date Range</label>
+                            <select class="form-select" name="range" id="dateRange">
+                                <option value="7" {% if date_range == 7 %}selected{% endif %}>Last 7 days</option>
+                                <option value="30" {% if date_range == 30 %}selected{% endif %}>Last 30 days</option>
+                                <option value="90" {% if date_range == 90 %}selected{% endif %}>Last 90 days</option>
+                                <option value="365" {% if date_range == 365 %}selected{% endif %}>Last year</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">&nbsp;</label>
+                            <button type="submit" class="btn btn-primary d-block">Update Analysis</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if selected_sport %}
+    <!-- Analysis Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="fas fa-chart-bar fa-2x text-primary mb-2"></i>
+                    <h5>Total Matches</h5>
+                    <h3>{{ stats.total_matches }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="fas fa-trophy fa-2x text-success mb-2"></i>
+                    <h5>Home Wins</h5>
+                    <h3>{{ stats.home_wins }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="fas fa-plane fa-2x text-info mb-2"></i>
+                    <h5>Away Wins</h5>
+                    <h3>{{ stats.away_wins }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="fas fa-handshake fa-2x text-warning mb-2"></i>
+                    <h5>Draws</h5>
+                    <h3>{{ stats.draws }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Match Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>Average Goals per Match:</span>
+                        <strong>{{ stats.avg_goals }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>Most Goals in a Match:</span>
+                        <strong>{{ stats.most_goals }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Recent Matches</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for match in stats.recent_matches %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>{{ match.home_team.name }}</span>
+                                <strong>{{ match.home_score }} - {{ match.away_score }}</strong>
+                                <span>{{ match.away_team.name }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        Please select a sport to view analysis.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-submit form when sport or date range changes
+    document.getElementById('sportSelect').addEventListener('change', function() {
+        this.form.submit();
+    });
+    document.getElementById('dateRange').addEventListener('change', function() {
+        this.form.submit();
+    });
+});
+</script>
+{% endblock %}

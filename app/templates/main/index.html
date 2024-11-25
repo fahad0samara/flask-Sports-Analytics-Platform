@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Welcome Section -->
+    <section class="welcome-section">
+        <h1>Welcome back, {{ current_user.username }}!</h1>
+        <div class="user-stats">
+            <div class="stat-card">
+                <h3>{{ total_predictions }}</h3>
+                <p>Total Predictions</p>
+            </div>
+            <div class="stat-card">
+                <h3>{{ correct_predictions }}</h3>
+                <p>Correct Predictions</p>
+            </div>
+            <div class="stat-card">
+                <h3>{{ "%.1f"|format(prediction_accuracy) }}%</h3>
+                <p>Accuracy Rate</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Live Matches Section -->
+    <section class="live-matches-section">
+        <h2>Live Matches</h2>
+        <div class="matches-grid">
+            {% for match in live_matches %}
+            <div class="match-card live">
+                <div class="match-header">
+                    <span class="sport-icon"><i class="fas {{ match.home_team.sport.icon }}"></i></span>
+                    <span class="live-indicator">LIVE</span>
+                    <span class="match-time">{{ ((now() - match.start_time).total_seconds() / 60)|int }}′</span>
+                </div>
+                <div class="match-teams">
+                    <div class="team home">
+                        <span class="team-name">{{ match.home_team.name }}</span>
+                        <span class="score">{{ match.home_score or 0 }}</span>
+                    </div>
+                    <div class="versus">VS</div>
+                    <div class="team away">
+                        <span class="score">{{ match.away_score or 0 }}</span>
+                        <span class="team-name">{{ match.away_team.name }}</span>
+                    </div>
+                </div>
+                <div class="match-footer">
+                    <a href="{{ url_for('main.match_detail', match_id=match.id) }}" class="btn btn-outline-primary">View Details</a>
+                </div>
+            </div>
+            {% else %}
+            <div class="no-matches">
+                <p>No live matches at the moment</p>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Upcoming Matches Section -->
+    <section class="upcoming-matches-section">
+        <h2>Upcoming Matches</h2>
+        <div class="matches-grid">
+            {% for match in upcoming_matches %}
+            <div class="match-card upcoming">
+                <div class="match-header">
+                    <span class="sport-icon"><i class="fas {{ match.home_team.sport.icon }}"></i></span>
+                    <span class="match-time">{{ match.start_time.strftime('%d %b, %H:%M') }}</span>
+                </div>
+                <div class="match-teams">
+                    <div class="team home">
+                        <span class="team-name">{{ match.home_team.name }}</span>
+                    </div>
+                    <div class="versus">VS</div>
+                    <div class="team away">
+                        <span class="team-name">{{ match.away_team.name }}</span>
+                    </div>
+                </div>
+                <div class="match-footer">
+                    <a href="{{ url_for('main.match_detail', match_id=match.id) }}" class="btn btn-primary">Make Prediction</a>
+                </div>
+            </div>
+            {% else %}
+            <div class="no-matches">
+                <p>No upcoming matches scheduled</p>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Recent Predictions Section -->
+    <section class="recent-predictions-section">
+        <h2>Your Recent Predictions</h2>
+        <div class="predictions-grid">
+            {% for prediction in predictions %}
+            <div class="prediction-card {{ 'correct' if prediction.is_correct else 'incorrect' if prediction.is_correct is not none else 'pending' }}">
+                <div class="prediction-header">
+                    <span class="sport-icon"><i class="fas {{ prediction.match.home_team.sport.icon }}"></i></span>
+                    <span class="prediction-date">{{ prediction.created_at.strftime('%d %b %Y') }}</span>
+                </div>
+                <div class="match-teams">
+                    <span class="team-name">{{ prediction.match.home_team.name }}</span>
+                    <span class="vs">vs</span>
+                    <span class="team-name">{{ prediction.match.away_team.name }}</span>
+                </div>
+                <div class="prediction-details">
+                    <p>Your Prediction: <strong>{{ prediction.predicted_winner.name }}</strong></p>
+                    <p>Confidence: <strong>{{ prediction.confidence }}%</strong></p>
+                    {% if prediction.is_correct is not none %}
+                    <div class="prediction-result {{ 'correct' if prediction.is_correct else 'incorrect' }}">
+                        {{ 'Correct!' if prediction.is_correct else 'Incorrect' }}
+                    </div>
+                    {% else %}
+                    <div class="prediction-result pending">Pending</div>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <div class="no-predictions">
+                <p>No predictions made yet</p>
+                <a href="{{ url_for('main.matches') }}" class="btn btn-primary">Make Your First Prediction</a>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+.dashboard-container {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+section {
+    margin-bottom: 3rem;
+}
+
+.welcome-section {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.user-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.stat-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.stat-card h3 {
+    font-size: 2rem;
+    color: #2c3e50;
+    margin: 0;
+}
+
+.stat-card p {
+    color: #7f8c8d;
+    margin: 0.5rem 0 0;
+}
+
+.matches-grid, .predictions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.match-card, .prediction-card {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.match-header, .prediction-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.live-indicator {
+    background: #e74c3c;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.match-teams {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 1rem 0;
+}
+
+.team {
+    text-align: center;
+    flex: 1;
+}
+
+.versus {
+    margin: 0 1rem;
+    color: #7f8c8d;
+}
+
+.score {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.match-footer {
+    text-align: center;
+    margin-top: 1rem;
+}
+
+.prediction-details {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #ecf0f1;
+}
+
+.prediction-result {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    margin-top: 0.5rem;
+}
+
+.prediction-result.correct {
+    background: #2ecc71;
+    color: white;
+}
+
+.prediction-result.incorrect {
+    background: #e74c3c;
+    color: white;
+}
+
+.prediction-result.pending {
+    background: #f1c40f;
+    color: white;
+}
+
+.no-matches, .no-predictions {
+    text-align: center;
+    padding: 2rem;
+    background: white;
+    border-radius: 10px;
+    grid-column: 1 / -1;
+}
+
+.sport-icon {
+    font-size: 1.2rem;
+    color: #2c3e50;
+}
+
+@media (max-width: 768px) {
+    .dashboard-container {
+        padding: 1rem;
+    }
+    
+    .matches-grid, .predictions-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}

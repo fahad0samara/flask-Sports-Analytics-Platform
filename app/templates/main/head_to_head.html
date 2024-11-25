@@ -1,0 +1,317 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Team Selection -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form class="row g-3" id="comparisonForm">
+                        <div class="col-md-3">
+                            <label class="form-label">Sport</label>
+                            <select class="form-select" id="sportSelect" name="sport_id" required>
+                                {% for sport in sports %}
+                                <option value="{{ sport.id }}">{{ sport.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Team 1</label>
+                            <select class="form-select" id="team1Select" name="team1_id" required>
+                                <option value="">Select Team 1</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Team 2</label>
+                            <select class="form-select" id="team2Select" name="team2_id" required>
+                                <option value="">Select Team 2</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">&nbsp;</label>
+                            <button type="submit" class="btn btn-primary d-block w-100">Compare Teams</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comparison Results -->
+    <div id="comparisonResults" class="d-none">
+        <!-- Head to Head Record -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Head to Head Record</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-md-4">
+                                <h3 id="team1Wins">0</h3>
+                                <p class="text-muted">Team 1 Wins</p>
+                            </div>
+                            <div class="col-md-4">
+                                <h3 id="draws">0</h3>
+                                <p class="text-muted">Draws</p>
+                            </div>
+                            <div class="col-md-4">
+                                <h3 id="team2Wins">0</h3>
+                                <p class="text-muted">Team 2 Wins</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Team Stats Comparison -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Performance Metrics</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="statsRadarChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Form Guide</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="formLineChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Key Players Comparison -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Team 1 Key Players</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table" id="team1Players">
+                                <thead>
+                                    <tr>
+                                        <th>Player</th>
+                                        <th>Position</th>
+                                        <th>Rating</th>
+                                        <th>Form</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Team 2 Key Players</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table" id="team2Players">
+                                <thead>
+                                    <tr>
+                                        <th>Player</th>
+                                        <th>Position</th>
+                                        <th>Rating</th>
+                                        <th>Form</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Win Probability -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Match Prediction</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="progress" style="height: 30px;">
+                            <div id="team1Prob" class="progress-bar bg-primary" role="progressbar"></div>
+                            <div id="drawProb" class="progress-bar bg-secondary" role="progressbar"></div>
+                            <div id="team2Prob" class="progress-bar bg-success" role="progressbar"></div>
+                        </div>
+                        <div class="row text-center mt-3">
+                            <div class="col-md-4">
+                                <p>Team 1 Win: <span id="team1ProbText">0%</span></p>
+                            </div>
+                            <div class="col-md-4">
+                                <p>Draw: <span id="drawProbText">0%</span></p>
+                            </div>
+                            <div class="col-md-4">
+                                <p>Team 2 Win: <span id="team2ProbText">0%</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let statsRadarChart = null;
+let formLineChart = null;
+
+document.getElementById('sportSelect').addEventListener('change', async function() {
+    const sportId = this.value;
+    const response = await fetch(`/api/teams/${sportId}`);
+    const teams = await response.json();
+    
+    const team1Select = document.getElementById('team1Select');
+    const team2Select = document.getElementById('team2Select');
+    
+    team1Select.innerHTML = '<option value="">Select Team 1</option>';
+    team2Select.innerHTML = '<option value="">Select Team 2</option>';
+    
+    teams.forEach(team => {
+        team1Select.innerHTML += `<option value="${team.id}">${team.name}</option>`;
+        team2Select.innerHTML += `<option value="${team.id}">${team.name}</option>`;
+    });
+});
+
+document.getElementById('comparisonForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const response = await fetch('/api/head-to-head', {
+        method: 'POST',
+        body: formData
+    });
+    const data = await response.json();
+    
+    updateComparison(data);
+});
+
+function updateComparison(data) {
+    document.getElementById('comparisonResults').classList.remove('d-none');
+    
+    // Update head to head record
+    document.getElementById('team1Wins').textContent = data.head_to_head.team1_wins;
+    document.getElementById('draws').textContent = data.head_to_head.draws;
+    document.getElementById('team2Wins').textContent = data.head_to_head.team2_wins;
+    
+    // Update radar chart
+    updateStatsRadarChart(data.stats);
+    
+    // Update form chart
+    updateFormLineChart(data.form);
+    
+    // Update player tables
+    updatePlayerTable('team1Players', data.team1_players);
+    updatePlayerTable('team2Players', data.team2_players);
+    
+    // Update win probability
+    updateWinProbability(data.prediction);
+}
+
+function updateStatsRadarChart(stats) {
+    if (statsRadarChart) {
+        statsRadarChart.destroy();
+    }
+    
+    const ctx = document.querySelector('#statsRadarChart').getContext('2d');
+    statsRadarChart = new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: stats.metrics,
+            datasets: [
+                {
+                    label: 'Team 1',
+                    data: stats.team1_values,
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)'
+                },
+                {
+                    label: 'Team 2',
+                    data: stats.team2_values,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)'
+                }
+            ]
+        }
+    });
+}
+
+function updateFormLineChart(form) {
+    if (formLineChart) {
+        formLineChart.destroy();
+    }
+    
+    const ctx = document.querySelector('#formLineChart').getContext('2d');
+    formLineChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: form.dates,
+            datasets: [
+                {
+                    label: 'Team 1',
+                    data: form.team1_form,
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    tension: 0.1
+                },
+                {
+                    label: 'Team 2',
+                    data: form.team2_form,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    tension: 0.1
+                }
+            ]
+        }
+    });
+}
+
+function updatePlayerTable(tableId, players) {
+    const tbody = document.querySelector(`#${tableId} tbody`);
+    tbody.innerHTML = '';
+    
+    players.forEach(player => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${player.name}</td>
+            <td>${player.position}</td>
+            <td>${player.rating}</td>
+            <td>
+                <div class="progress" style="height: 15px;">
+                    <div class="progress-bar bg-success" style="width: ${player.form}%"></div>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function updateWinProbability(prediction) {
+    document.getElementById('team1Prob').style.width = `${prediction.team1_win}%`;
+    document.getElementById('drawProb').style.width = `${prediction.draw}%`;
+    document.getElementById('team2Prob').style.width = `${prediction.team2_win}%`;
+    
+    document.getElementById('team1ProbText').textContent = `${prediction.team1_win}%`;
+    document.getElementById('drawProbText').textContent = `${prediction.draw}%`;
+    document.getElementById('team2ProbText').textContent = `${prediction.team2_win}%`;
+}
+</script>
+{% endblock %}

@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="predictions-container">
+    <h1>My Predictions</h1>
+    
+    <div class="predictions-stats">
+        <div class="stat-card">
+            <h3>{{ predictions|length }}</h3>
+            <p>Total Predictions</p>
+        </div>
+        <div class="stat-card">
+            {% set correct = predictions|selectattr("is_correct", "equalto", true)|list|length %}
+            <h3>{{ correct }}</h3>
+            <p>Correct Predictions</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ "%.1f"|format(correct / predictions|length * 100 if predictions else 0) }}%</h3>
+            <p>Accuracy Rate</p>
+        </div>
+    </div>
+
+    <div class="predictions-grid">
+        {% for prediction in predictions %}
+        <div class="prediction-card {{ 'correct' if prediction.is_correct else 'incorrect' if prediction.is_correct is not none else 'pending' }}">
+            <div class="prediction-header">
+                <span class="sport-icon">
+                    <i class="fas {{ prediction.match.home_team.sport.icon }}"></i>
+                    {{ prediction.match.home_team.sport.name }}
+                </span>
+                <span class="prediction-date">{{ prediction.created_at.strftime('%d %b %Y') }}</span>
+            </div>
+            
+            <div class="match-teams">
+                <div class="team home">
+                    <img src="{{ prediction.match.home_team.logo_url or url_for('static', filename='images/default_team.png') }}"
+                         alt="{{ prediction.match.home_team.name }}" class="team-logo">
+                    <span class="team-name">{{ prediction.match.home_team.name }}</span>
+                    {% if prediction.match.status in ['live', 'completed'] %}
+                    <span class="score">{{ prediction.match.home_score or 0 }}</span>
+                    {% endif %}
+                </div>
+                <div class="versus">VS</div>
+                <div class="team away">
+                    <img src="{{ prediction.match.away_team.logo_url or url_for('static', filename='images/default_team.png') }}"
+                         alt="{{ prediction.match.away_team.name }}" class="team-logo">
+                    <span class="team-name">{{ prediction.match.away_team.name }}</span>
+                    {% if prediction.match.status in ['live', 'completed'] %}
+                    <span class="score">{{ prediction.match.away_score or 0 }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="prediction-details">
+                <p>Your Prediction: 
+                    <strong>{{ prediction.predicted_winner.name }}</strong>
+                    ({{ (prediction.confidence * 100)|round|int }}% confidence)
+                </p>
+                {% if prediction.is_correct is not none %}
+                <div class="prediction-result {{ 'correct' if prediction.is_correct else 'incorrect' }}">
+                    {{ 'Correct!' if prediction.is_correct else 'Incorrect' }}
+                </div>
+                {% else %}
+                <div class="prediction-result pending">Match in Progress</div>
+                {% endif %}
+            </div>
+            
+            <div class="prediction-footer">
+                <a href="{{ url_for('main.match_detail', match_id=prediction.match.id) }}" class="btn btn-outline-primary">
+                    View Match Details
+                </a>
+            </div>
+        </div>
+        {% else %}
+        <div class="no-predictions">
+            <p>You haven't made any predictions yet.</p>
+            <a href="{{ url_for('main.matches') }}" class="btn btn-primary">Browse Matches</a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+.predictions-container {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.predictions-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin: 2rem 0;
+}
+
+.stat-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.stat-card h3 {
+    font-size: 2rem;
+    color: #2c3e50;
+    margin: 0;
+}
+
+.stat-card p {
+    color: #7f8c8d;
+    margin: 0.5rem 0 0;
+}
+
+.predictions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.prediction-card {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.prediction-card.correct {
+    border-left: 4px solid #2ecc71;
+}
+
+.prediction-card.incorrect {
+    border-left: 4px solid #e74c3c;
+}
+
+.prediction-card.pending {
+    border-left: 4px solid #f1c40f;
+}
+
+.prediction-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.sport-icon {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.match-teams {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 1rem 0;
+}
+
+.team {
+    text-align: center;
+    flex: 1;
+}
+
+.team-logo {
+    width: 50px;
+    height: 50px;
+    object-fit: contain;
+    margin-bottom: 0.5rem;
+}
+
+.team-name {
+    font-size: 0.9rem;
+    margin: 0.5rem 0;
+    display: block;
+}
+
+.score {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #2c3e50;
+    display: block;
+}
+
+.versus {
+    margin: 0 1rem;
+    color: #7f8c8d;
+}
+
+.prediction-details {
+    margin: 1rem 0;
+    padding: 1rem 0;
+    border-top: 1px solid #ecf0f1;
+    border-bottom: 1px solid #ecf0f1;
+}
+
+.prediction-result {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    margin-top: 0.5rem;
+}
+
+.prediction-result.correct {
+    background: #2ecc71;
+    color: white;
+}
+
+.prediction-result.incorrect {
+    background: #e74c3c;
+    color: white;
+}
+
+.prediction-result.pending {
+    background: #f1c40f;
+    color: white;
+}
+
+.prediction-footer {
+    margin-top: 1rem;
+    text-align: center;
+}
+
+.no-predictions {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 3rem;
+    background: white;
+    border-radius: 10px;
+}
+
+@media (max-width: 768px) {
+    .predictions-container {
+        padding: 1rem;
+    }
+    
+    .predictions-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}

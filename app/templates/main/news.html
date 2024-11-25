@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/news.css') }}">
+<style>
+    .card {
+        transition: transform 0.2s;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+    
+    .card-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+    }
+    
+    .card-text {
+        color: #666;
+        font-size: 0.9rem;
+    }
+    
+    .card-footer {
+        background-color: #fff;
+        border-top: 1px solid rgba(0,0,0,0.1);
+    }
+    
+    .card-img-top-wrapper {
+        position: relative;
+        background-color: #f8f9fa;
+    }
+    
+    .card-img-top-wrapper::before {
+        content: "";
+        display: block;
+        padding-top: 56.25%; /* 16:9 aspect ratio */
+    }
+    
+    .card-img-top {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="mb-4">Sports News</h1>
+            
+            <!-- Filters -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-4">
+                            <label for="sport" class="form-label">Sport</label>
+                            <select class="form-select" id="sport" name="sport">
+                                <option value="">All Sports</option>
+                                {% for sport in sports %}
+                                <option value="{{ sport.id }}" {% if selected_sport==sport.id %}selected{% endif %}>
+                                    {{ sport.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="search" class="form-label">Search</label>
+                            <input type="text" class="form-control" id="search" name="search" 
+                                   value="{{ search if search }}" placeholder="Search news...">
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">Search</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- News Grid -->
+    <div class="row">
+        {% if news_items.items %}
+            {% for article in news_items.items %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100">
+                    {% if article.image_url %}
+                    <div class="card-img-top-wrapper" style="height: 200px; overflow: hidden;">
+                        <img src="{{ article.image_url }}" class="card-img-top" alt="{{ article.title }}" 
+                             style="width: 100%; height: 100%; object-fit: cover;">
+                    </div>
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title">{{ article.title }}</h5>
+                        <p class="card-text">{{ article.content[:200] }}...</p>
+                    </div>
+                    <div class="card-footer">
+                        <small class="text-muted">
+                            {{ article.created_at.strftime('%B %d, %Y') }}
+                            {% if article.sport %}
+                            • {{ article.sport.name }}
+                            {% endif %}
+                        </small>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            
+            <!-- Pagination -->
+            {% if news_items.pages > 1 %}
+            <div class="col-12">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center">
+                        {% if news_items.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('main.news', page=news_items.prev_num, sport=selected_sport, search=search) }}">Previous</a>
+                        </li>
+                        {% endif %}
+                        
+                        {% for page_num in news_items.iter_pages() %}
+                            {% if page_num %}
+                                <li class="page-item {% if page_num == news_items.page %}active{% endif %}">
+                                    <a class="page-link" href="{{ url_for('main.news', page=page_num, sport=selected_sport, search=search) }}">{{ page_num }}</a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if news_items.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('main.news', page=news_items.next_num, sport=selected_sport, search=search) }}">Next</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+        {% else %}
+        <div class="col">
+            <div class="alert alert-info">
+                No news articles found matching your criteria.
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const API_URL = "{{ url_for('main.api_news') }}";
+</script>
+<script src="{{ url_for('static', filename='js/news.js') }}"></script>
+{% endblock %}

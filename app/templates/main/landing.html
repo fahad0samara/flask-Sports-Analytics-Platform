@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="landing-container">
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Welcome to Sports Analytics Pro</h1>
+            <p>Your ultimate platform for sports predictions, live tracking, and in-depth analytics</p>
+            {% if current_user.is_authenticated %}
+                <a href="{{ url_for('main.index') }}" class="btn btn-primary">Go to Dashboard</a>
+            {% else %}
+                <div class="hero-buttons">
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-primary">Login</a>
+                    <a href="{{ url_for('auth.register') }}" class="btn btn-secondary">Sign Up</a>
+                </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- Platform Stats -->
+    <section class="stats">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>{{ total_matches }}</h3>
+                <p>Total Matches</p>
+            </div>
+            <div class="stat-card">
+                <h3>{{ total_users }}</h3>
+                <p>Active Users</p>
+            </div>
+            <div class="stat-card">
+                <h3>{{ total_predictions }}</h3>
+                <p>Predictions Made</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Matches -->
+    {% if featured_matches %}
+    <section class="featured-matches">
+        <h2>Featured Matches</h2>
+        <div class="matches-grid">
+            {% for match in featured_matches %}
+            <div class="match-card">
+                <div class="match-header">
+                    <span class="match-sport">{{ match.sport.name }}</span>
+                    <span class="match-status {{ match.status }}">{{ match.status|title }}</span>
+                </div>
+                <div class="match-teams">
+                    <div class="team home">
+                        <img src="{{ match.home_team.logo_url or url_for('static', filename='img/default_team.png') }}" alt="{{ match.home_team.name }}">
+                        <span>{{ match.home_team.name }}</span>
+                    </div>
+                    <div class="match-score">
+                        {% if match.status == 'live' or match.status == 'completed' %}
+                            <span>{{ match.home_score }} - {{ match.away_score }}</span>
+                        {% else %}
+                            <span>VS</span>
+                        {% endif %}
+                    </div>
+                    <div class="team away">
+                        <img src="{{ match.away_team.logo_url or url_for('static', filename='img/default_team.png') }}" alt="{{ match.away_team.name }}">
+                        <span>{{ match.away_team.name }}</span>
+                    </div>
+                </div>
+                <div class="match-footer">
+                    <span class="match-time">{{ match.start_time.strftime('%d %b %Y %H:%M') }}</span>
+                    {% if not current_user.is_authenticated %}
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-sm btn-primary">Login to Predict</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/landing.js') }}"></script>
+{% endblock %}

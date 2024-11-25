@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/match_detail.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Match Card -->
+    <div class="card shadow-sm mb-4">
+        <!-- Sport and Status Header -->
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center py-3">
+            <div class="d-flex align-items-center">
+                <i class="fas {{ match.sport.icon }} fa-lg me-2"></i>
+                <span class="fw-bold">{{ match.sport.name }}</span>
+                <span class="ms-2 badge bg-light text-primary">{{ match.league.name }}</span>
+            </div>
+            {% if match.status == 'live' %}
+                <div class="badge bg-danger d-flex align-items-center">
+                    <div class="live-pulse"></div>
+                    <span>LIVE</span>
+                    <span class="ms-2">{{ ((current_time - match.start_time).total_seconds() / 60)|int }}′</span>
+                </div>
+            {% elif match.status == 'completed' %}
+                <div class="badge bg-success">
+                    <i class="fas fa-check-circle me-1"></i> Final Score
+                </div>
+            {% else %}
+                <div class="badge bg-info">
+                    <i class="far fa-calendar-alt me-1"></i>
+                    {{ match.start_time.strftime('%d %B %Y, %H:%M') }}
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Match Score Section -->
+        <div class="card-body p-4">
+            <div class="row align-items-center text-center">
+                <!-- Home Team -->
+                <div class="col-md-4">
+                    <div class="team-logo">
+                        <img src="{{ match.home_team.logo_url or url_for('static', filename='images/teams/' + match.home_team.name|lower|replace(' ', '-') + '.png') }}" 
+                             alt="{{ match.home_team.name }}" class="img-fluid">
+                    </div>
+                    <h4 class="team-name">{{ match.home_team.name }}</h4>
+                    {% if match.status in ['live', 'completed'] %}
+                        <h2 class="score display-4 fw-bold text-primary mb-0">{{ match.home_score or 0 }}</h2>
+                    {% endif %}
+                </div>
+
+                <!-- VS Section -->
+                <div class="col-md-4 my-4 my-md-0">
+                    <div class="versus-circle"><span>VS</span></div>
+                </div>
+
+                <!-- Away Team -->
+                <div class="col-md-4">
+                    <div class="team-logo">
+                        <img src="{{ match.away_team.logo_url or url_for('static', filename='images/teams/' + match.away_team.name|lower|replace(' ', '-') + '.png') }}" 
+                             alt="{{ match.away_team.name }}" class="img-fluid">
+                    </div>
+                    <h4 class="team-name">{{ match.away_team.name }}</h4>
+                    {% if match.status in ['live', 'completed'] %}
+                        <h2 class="score display-4 fw-bold text-primary mb-0">{{ match.away_score or 0 }}</h2>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Match Statistics -->
+    {% if match.status != 'scheduled' %}
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-light">
+            <h5 class="card-title mb-0"><i class="fas fa-chart-bar me-2"></i> Match Statistics</h5>
+        </div>
+        <div class="card-body">
+            {% set stats = match.get_match_stats() %}
+            {% if stats %}
+            <div class="row g-4">
+                <!-- Possession -->
+                <div class="col-md-6">
+                    <div class="stat-card">
+                        <h6 class="text-muted mb-3"><i class="fas fa-futbol me-2"></i> Possession</h6>
+                        <div class="progress">
+                            {% set home_possession = stats.home_possession or 50 %}
+                            <div class="progress-bar bg-primary" role="progressbar" style="width: {{ home_possession }}%">{{ home_possession }}%</div>
+                            <div class="progress-bar bg-secondary" role="progressbar" style="width: {{ 100 - home_possession }}%">{{ 100 - home_possession }}%</div>
+                        </div>
+                        <div class="d-flex justify-content-between mt-2">
+                            <small class="text-muted">{{ match.home_team.name }}</small>
+                            <small class="text-muted">{{ match.away_team.name }}</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Shots on Target -->
+                <div class="col-md-6">
+                    <div class="stat-card">
+                        <h6 class="text-muted mb-3"><i class="fas fa-bullseye me-2"></i> Shots on Target</h6>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h3 class="mb-0 text-primary">{{ stats.home_shots_on_target or 0 }}</h3>
+                            <div class="progress flex-grow-1 mx-3">
+                                {% set total_shots = (stats.home_shots_on_target or 0) + (stats.away_shots_on_target or 0) %}
+                                {% set home_shots_percent = (stats.home_shots_on_target or 0) / (total_shots or 1) * 100 %}
+                                <div class="progress-bar bg-primary" role="progressbar" style="width: {{ home_shots_percent }}%"></div>
+                            </div>
+                            <h3 class="mb-0 text-secondary">{{ stats.away_shots_on_target or 0 }}</h3>
+                        </div>
+                        <div class="d-flex justify-content-between mt-2">
+                            <small class="text-muted">{{ match.home_team.name }}</small>
+                            <small class="text-muted">{{ match.away_team.name }}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+                <p class="text-muted">Statistics will be available once the match begins.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const confidenceInput = document.getElementById('confidence');
+    const confidenceValue = document.querySelector('.confidence-value');
+    
+    function updateConfidence() {
+        const value = confidenceInput.value;
+        confidenceValue.textContent = `${value}%`;
+    }
+    
+    if (confidenceInput) {
+        confidenceInput.addEventListener('input', updateConfidence);
+        updateConfidence();
+    }
+});
+</script>
+{% endblock %}

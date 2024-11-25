@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<div class="row">
+    {% for sport in sports %}
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header d-flex align-items-center">
+                <img src="{{ sport.icon }}" alt="{{ sport.name }}" class="sport-icon">
+                <h5 class="mb-0">{{ sport.name }}</h5>
+            </div>
+            <div class="card-body">
+                <div class="leagues">
+                    {% for league in sport.leagues %}
+                    <div class="league-section mb-4">
+                        <div class="league-header d-flex align-items-center mb-3">
+                            <img src="{{ league.logo_url }}" alt="{{ league.name }}" class="league-logo">
+                            <div>
+                                <h6 class="league-name">{{ league.name }}</h6>
+                                <span class="league-country">{{ league.country }}</span>
+                            </div>
+                        </div>
+                        
+                        {% set live_matches = league.matches.filter_by(status='live').all() %}
+                        {% if live_matches %}
+                        <h6 class="mb-3">Live Matches</h6>
+                        {% for match in live_matches %}
+                        <div class="match-card">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                    <img src="{{ match.home_team.logo_url }}" alt="{{ match.home_team.name }}" class="team-logo">
+                                    <span class="team-name">{{ match.home_team.name }}</span>
+                                </div>
+                                <div class="score">{{ match.home_score }} - {{ match.away_score }}</div>
+                                <div class="d-flex align-items-center">
+                                    <span class="team-name">{{ match.away_team.name }}</span>
+                                    <img src="{{ match.away_team.logo_url }}" alt="{{ match.away_team.name }}" class="team-logo">
+                                </div>
+                            </div>
+                            <div class="text-center mt-2">
+                                <span class="match-status status-live">
+                                    <i class="fas fa-circle live-indicator"></i> LIVE
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% endif %}
+
+                        {% set upcoming_matches = league.matches.filter_by(status='scheduled').order_by(Match.start_time.asc()).limit(3).all() %}
+                        {% if upcoming_matches %}
+                        <h6 class="mb-3 mt-4">Upcoming Matches</h6>
+                        {% for match in upcoming_matches %}
+                        <div class="match-card">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                    <img src="{{ match.home_team.logo_url }}" alt="{{ match.home_team.name }}" class="team-logo">
+                                    <span class="team-name">{{ match.home_team.name }}</span>
+                                </div>
+                                <div class="match-time">
+                                    {{ match.start_time.strftime('%Y-%m-%d %H:%M') }}
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <span class="team-name">{{ match.away_team.name }}</span>
+                                    <img src="{{ match.away_team.logo_url }}" alt="{{ match.away_team.name }}" class="team-logo">
+                                </div>
+                            </div>
+                            <div class="text-center mt-2">
+                                <span class="match-status status-scheduled">Scheduled</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% endif %}
+
+                        {% set completed_matches = league.matches.filter_by(status='completed').order_by(Match.start_time.desc()).limit(3).all() %}
+                        {% if completed_matches %}
+                        <h6 class="mb-3 mt-4">Recent Results</h6>
+                        {% for match in completed_matches %}
+                        <div class="match-card">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                    <img src="{{ match.home_team.logo_url }}" alt="{{ match.home_team.name }}" class="team-logo">
+                                    <span class="team-name {% if match.winner_id == match.home_team_id %}font-weight-bold{% endif %}">
+                                        {{ match.home_team.name }}
+                                    </span>
+                                </div>
+                                <div class="score">{{ match.home_score }} - {{ match.away_score }}</div>
+                                <div class="d-flex align-items-center">
+                                    <span class="team-name {% if match.winner_id == match.away_team_id %}font-weight-bold{% endif %}">
+                                        {{ match.away_team.name }}
+                                    </span>
+                                    <img src="{{ match.away_team.logo_url }}" alt="{{ match.away_team.name }}" class="team-logo">
+                                </div>
+                            </div>
+                            <div class="text-center mt-2">
+                                <span class="match-status status-completed">Final</span>
+                                <span class="match-time d-block mt-1">
+                                    {{ match.start_time.strftime('%Y-%m-%d %H:%M') }}
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Update live match scores every 30 seconds
+    setInterval(function() {
+        $.get('/api/live-scores', function(data) {
+            // Update scores for each live match
+            data.forEach(function(match) {
+                // Find the match card and update scores
+                const matchCard = $(`[data-match-id="${match.id}"]`);
+                if (matchCard.length) {
+                    matchCard.find('.score').text(`${match.home_score} - ${match.away_score}`);
+                }
+            });
+        });
+    }, 30000);
+</script>
+{% endblock %}

@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<style>
+    .prediction-card {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 25px;
+        margin-bottom: 20px;
+        background: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .match-details {
+        margin-bottom: 25px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #eee;
+    }
+    .team-name {
+        font-size: 1.4em;
+        font-weight: bold;
+        color: #333;
+    }
+    .vs {
+        font-size: 1.2em;
+        color: #666;
+        margin: 0 15px;
+    }
+    .match-info {
+        color: #666;
+        margin-top: 10px;
+    }
+    .form-group {
+        margin-bottom: 20px;
+    }
+    .confidence-slider {
+        width: 100%;
+    }
+    .confidence-value {
+        font-size: 1.2em;
+        font-weight: bold;
+        color: #007bff;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Make Your Prediction</h1>
+    
+    <div class="prediction-card">
+        <div class="match-details">
+            <div class="d-flex align-items-center justify-content-center">
+                <span class="team-name">{{ match.home_team.name }}</span>
+                <span class="vs">vs</span>
+                <span class="team-name">{{ match.away_team.name }}</span>
+            </div>
+            <div class="match-info text-center">
+                <div>
+                    <i class="fas fa-calendar"></i>
+                    {{ match.start_time.strftime('%B %d, %Y') }}
+                </div>
+                <div>
+                    <i class="fas fa-clock"></i>
+                    {{ match.start_time.strftime('%I:%M %p') }}
+                </div>
+                <div>
+                    <i class="fas fa-trophy"></i>
+                    {{ match.home_team.sport.name }}
+                </div>
+            </div>
+        </div>
+
+        <form method="POST" action="">
+            {{ form.hidden_tag() }}
+            
+            <div class="form-group">
+                {{ form.predicted_winner.label(class="form-label") }}
+                {{ form.predicted_winner(class="form-select") }}
+                {% for error in form.predicted_winner.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">{{ form.confidence.label }}</label>
+                <div class="d-flex align-items-center mb-2">
+                    <input type="range" class="form-range confidence-slider" 
+                           min="0" max="100" step="1"
+                           id="confidenceSlider">
+                    <span class="confidence-value ms-3" id="confidenceValue">50%</span>
+                </div>
+                {{ form.confidence(type="hidden", id="confidenceInput") }}
+                {% for error in form.confidence.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="text-center">
+                {{ form.submit(class="btn btn-primary btn-lg") }}
+                <a href="{{ url_for('predictions.index') }}" class="btn btn-secondary btn-lg ms-2">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const slider = document.getElementById('confidenceSlider');
+        const value = document.getElementById('confidenceValue');
+        const input = document.getElementById('confidenceInput');
+        
+        // Set initial values
+        slider.value = 50;
+        value.textContent = '50%';
+        input.value = 50;
+        
+        slider.addEventListener('input', function() {
+            value.textContent = this.value + '%';
+            input.value = this.value;
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

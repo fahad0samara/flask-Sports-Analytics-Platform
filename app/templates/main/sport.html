@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}{{ sport.name }}{% endblock %}
+
+{% block content %}
+<div class="sport-header mb-4 bg-white p-4 rounded shadow-sm">
+    <div class="d-flex align-items-center">
+        <img src="{{ sport.icon }}" alt="{{ sport.name }}" class="sport-icon me-3">
+        <h2 class="mb-0">{{ sport.name }}</h2>
+    </div>
+</div>
+
+<div class="row g-4">
+    {% for league_data in leagues_data %}
+    <div class="col-12 col-lg-6">
+        <div class="card h-100 shadow-sm">
+            <div class="card-header bg-white">
+                <div class="d-flex align-items-center">
+                    <img src="{{ league_data.league.logo_url }}" alt="{{ league_data.league.name }}" class="league-logo">
+                    <div>
+                        <h5 class="mb-0">{{ league_data.league.name }}</h5>
+                        <small class="text-muted">{{ league_data.league.country }}</small>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if league_data.live_matches %}
+                <h6 class="mb-3 border-bottom pb-2">Live Matches</h6>
+                {% for match in league_data.live_matches %}
+                <div class="match-card" data-match-id="{{ match.id }}">
+                    <div class="row align-items-center">
+                        <div class="col-5 d-flex align-items-center">
+                            <img src="{{ match.home_team.logo_url }}" alt="{{ match.home_team.name }}" class="team-logo">
+                            <span class="team-name text-truncate">{{ match.home_team.name }}</span>
+                        </div>
+                        <div class="col-2 text-center">
+                            <div class="score">{{ match.home_score }} - {{ match.away_score }}</div>
+                        </div>
+                        <div class="col-5 d-flex align-items-center justify-content-end">
+                            <span class="team-name text-truncate">{{ match.away_team.name }}</span>
+                            <img src="{{ match.away_team.logo_url }}" alt="{{ match.away_team.name }}" class="team-logo">
+                        </div>
+                    </div>
+                    <div class="text-center mt-2">
+                        <span class="match-status status-live">
+                            <i class="fas fa-circle live-indicator"></i> LIVE
+                        </span>
+                    </div>
+                </div>
+                {% endfor %}
+                {% endif %}
+
+                {% if league_data.upcoming_matches %}
+                <h6 class="mb-3 mt-4 border-bottom pb-2">Upcoming Matches</h6>
+                {% for match in league_data.upcoming_matches %}
+                <div class="match-card">
+                    <div class="row align-items-center">
+                        <div class="col-5 d-flex align-items-center">
+                            <img src="{{ match.home_team.logo_url }}" alt="{{ match.home_team.name }}" class="team-logo">
+                            <span class="team-name text-truncate">{{ match.home_team.name }}</span>
+                        </div>
+                        <div class="col-2 text-center">
+                            <div class="match-time small">
+                                {{ format_match_time(match.start_time) }}
+                            </div>
+                        </div>
+                        <div class="col-5 d-flex align-items-center justify-content-end">
+                            <span class="team-name text-truncate">{{ match.away_team.name }}</span>
+                            <img src="{{ match.away_team.logo_url }}" alt="{{ match.away_team.name }}" class="team-logo">
+                        </div>
+                    </div>
+                    <div class="text-center mt-2">
+                        <span class="match-status status-scheduled">Scheduled</span>
+                    </div>
+                </div>
+                {% endfor %}
+                {% endif %}
+
+                {% if league_data.completed_matches %}
+                <h6 class="mb-3 mt-4 border-bottom pb-2">Recent Results</h6>
+                {% for match in league_data.completed_matches %}
+                <div class="match-card">
+                    <div class="row align-items-center">
+                        <div class="col-5 d-flex align-items-center">
+                            <img src="{{ match.home_team.logo_url }}" alt="{{ match.home_team.name }}" class="team-logo">
+                            <span class="team-name text-truncate {% if match.winner_id == match.home_team_id %}fw-bold{% endif %}">
+                                {{ match.home_team.name }}
+                            </span>
+                        </div>
+                        <div class="col-2 text-center">
+                            <div class="score">{{ match.home_score }} - {{ match.away_score }}</div>
+                        </div>
+                        <div class="col-5 d-flex align-items-center justify-content-end">
+                            <span class="team-name text-truncate {% if match.winner_id == match.away_team_id %}fw-bold{% endif %}">
+                                {{ match.away_team.name }}
+                            </span>
+                            <img src="{{ match.away_team.logo_url }}" alt="{{ match.away_team.name }}" class="team-logo">
+                        </div>
+                    </div>
+                    <div class="text-center mt-2">
+                        <span class="match-status status-completed">Final</span>
+                        <span class="match-time d-block mt-1 small">
+                            {{ format_match_time(match.start_time) }}
+                        </span>
+                    </div>
+                </div>
+                {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Update live match scores every 30 seconds
+    setInterval(function() {
+        $.get('/api/live-scores', function(data) {
+            // Update scores for each live match
+            data.forEach(function(match) {
+                // Find the match card and update scores
+                const matchCard = $(`[data-match-id="${match.id}"]`);
+                if (matchCard.length) {
+                    matchCard.find('.score').text(`${match.home_score} - ${match.away_score}`);
+                }
+            });
+        });
+    }, 30000);
+</script>
+{% endblock %}

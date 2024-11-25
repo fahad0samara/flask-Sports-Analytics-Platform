@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<style>
+    .leaderboard-card {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        background: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .leaderboard-header {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        font-weight: bold;
+    }
+    .user-row {
+        padding: 15px;
+        border-bottom: 1px solid #eee;
+        transition: background-color 0.2s;
+    }
+    .user-row:hover {
+        background-color: #f8f9fa;
+    }
+    .user-row:last-child {
+        border-bottom: none;
+    }
+    .rank {
+        font-size: 1.2em;
+        font-weight: bold;
+        color: #007bff;
+    }
+    .username {
+        font-weight: bold;
+        color: #333;
+    }
+    .stats {
+        font-size: 0.9em;
+        color: #666;
+    }
+    .streak-badge {
+        background: #28a745;
+        color: white;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 0.8em;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Prediction Leaderboard</h1>
+    
+    <div class="leaderboard-card">
+        <div class="leaderboard-header row">
+            <div class="col-1">#</div>
+            <div class="col-3">User</div>
+            <div class="col-2">Predictions</div>
+            <div class="col-2">Correct</div>
+            <div class="col-2">Accuracy</div>
+            <div class="col-2">Streak</div>
+        </div>
+        
+        {% for user in leaderboard_data %}
+        <div class="user-row row align-items-center">
+            <div class="col-1">
+                <span class="rank">{{ loop.index + (pagination.page - 1) * pagination.per_page }}</span>
+            </div>
+            <div class="col-3">
+                <span class="username">{{ user.username }}</span>
+            </div>
+            <div class="col-2 stats">
+                {{ user.total_predictions }}
+            </div>
+            <div class="col-2 stats">
+                {{ user.correct_predictions }}
+            </div>
+            <div class="col-2 stats">
+                {{ "%.1f"|format(user.accuracy) }}%
+            </div>
+            <div class="col-2">
+                {% if user.streak > 0 %}
+                <span class="streak-badge">
+                    <i class="fas fa-fire"></i> {{ user.streak }}
+                </span>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Pagination -->
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            {% if pagination.has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('predictions.leaderboard', page=pagination.prev_num) }}">Previous</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">Previous</span>
+            </li>
+            {% endif %}
+
+            {% for page_num in pagination.iter_pages(left_edge=2, left_current=2, right_current=3, right_edge=2) %}
+                {% if page_num %}
+                    {% if page_num == pagination.page %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ page_num }}</span>
+                    </li>
+                    {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('predictions.leaderboard', page=page_num) }}">{{ page_num }}</a>
+                    </li>
+                    {% endif %}
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if pagination.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('predictions.leaderboard', page=pagination.next_num) }}">Next</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">Next</span>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+{% endblock %}

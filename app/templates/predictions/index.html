@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<style>
+    .match-card {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        transition: transform 0.2s;
+        background: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .match-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    .match-teams {
+        font-size: 1.2em;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+    .match-info {
+        color: #666;
+        font-size: 0.9em;
+    }
+    .sport-icon {
+        margin-right: 10px;
+        color: #007bff;
+    }
+    .predict-btn {
+        margin-top: 15px;
+    }
+    .no-matches {
+        text-align: center;
+        padding: 40px;
+        color: #666;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Upcoming Matches</h1>
+    
+    {% if matches.items %}
+        {% for match in matches.items %}
+        <div class="match-card">
+            <div class="match-teams">
+                <i class="fas {{ match.home_team.sport.icon }} sport-icon"></i>
+                {{ match.home_team.name }} vs {{ match.away_team.name }}
+            </div>
+            <div class="match-info">
+                <div>
+                    <i class="fas fa-calendar"></i>
+                    {{ match.start_time.strftime('%B %d, %Y') }}
+                </div>
+                <div>
+                    <i class="fas fa-clock"></i>
+                    {{ match.start_time.strftime('%I:%M %p') }}
+                </div>
+                <div>
+                    <i class="fas fa-trophy"></i>
+                    {{ match.home_team.sport.name }}
+                </div>
+            </div>
+            <a href="{{ url_for('predictions.make_prediction', match_id=match.id) }}" 
+               class="btn btn-primary predict-btn">
+                Make Prediction
+            </a>
+        </div>
+        {% endfor %}
+        
+        <!-- Pagination -->
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center">
+                {% if matches.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('predictions.index', page=matches.prev_num) }}">Previous</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">Previous</span>
+                </li>
+                {% endif %}
+
+                {% for page_num in matches.iter_pages(left_edge=2, left_current=2, right_current=3, right_edge=2) %}
+                    {% if page_num %}
+                        {% if page_num == matches.page %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_num }}</span>
+                        </li>
+                        {% else %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('predictions.index', page=page_num) }}">{{ page_num }}</a>
+                        </li>
+                        {% endif %}
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if matches.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('predictions.index', page=matches.next_num) }}">Next</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">Next</span>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% else %}
+        <div class="no-matches">
+            <i class="fas fa-calendar-times fa-3x mb-3"></i>
+            <h3>No Upcoming Matches</h3>
+            <p>Check back later for new matches to predict!</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

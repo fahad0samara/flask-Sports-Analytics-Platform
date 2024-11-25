@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<style>
+    .match-card {
+        transition: transform 0.2s;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        border-radius: 12px;
+        overflow: hidden;
+        background: white;
+        margin-bottom: 1.5rem;
+    }
+
+    .match-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+
+    .match-header {
+        background: linear-gradient(45deg, #1a237e, #3949ab);
+        color: white;
+        padding: 1rem;
+        font-weight: bold;
+    }
+
+    .match-time {
+        font-size: 0.9rem;
+        color: rgba(255,255,255,0.9);
+    }
+
+    .match-body {
+        padding: 1.5rem;
+    }
+
+    .team-section {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 1rem 0;
+    }
+
+    .team-name {
+        font-weight: 600;
+        font-size: 1.1rem;
+        flex: 1;
+    }
+
+    .team-score {
+        font-size: 1.5rem;
+        font-weight: bold;
+        padding: 0 1.5rem;
+    }
+
+    .vs-badge {
+        background: #f5f5f5;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 600;
+        color: #666;
+    }
+
+    .match-footer {
+        background: #f8f9fa;
+        padding: 1rem;
+        border-top: 1px solid #eee;
+    }
+
+    .status-badge {
+        padding: 0.4rem 1rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .status-live {
+        background: #ff4444;
+        color: white;
+        animation: pulse 2s infinite;
+    }
+
+    .status-upcoming {
+        background: #4CAF50;
+        color: white;
+    }
+
+    .status-finished {
+        background: #757575;
+        color: white;
+    }
+
+    .filter-section {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+    }
+
+    .filter-title {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 1rem;
+    }
+
+    .date-filter {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .date-btn {
+        padding: 0.5rem 1rem;
+        border: 1px solid #ddd;
+        border-radius: 20px;
+        background: white;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .date-btn:hover, .date-btn.active {
+        background: #1a237e;
+        color: white;
+        border-color: #1a237e;
+    }
+
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.7; }
+        100% { opacity: 1; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">Matches</h1>
+            
+            <!-- Filter Section -->
+            <div class="filter-section">
+                <h5 class="filter-title">Filters</h5>
+                <form method="get" class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Sport</label>
+                        <select name="sport" class="form-select">
+                            <option value="">All Sports</option>
+                            {% for sport in sports %}
+                            <option value="{{ sport.id }}" {% if selected_sport == sport.id %}selected{% endif %}>
+                                {{ sport.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Status</label>
+                        <select name="status" class="form-select">
+                            <option value="">All Status</option>
+                            <option value="live" {% if selected_status == 'live' %}selected{% endif %}>Live</option>
+                            <option value="upcoming" {% if selected_status == 'upcoming' %}selected{% endif %}>Upcoming</option>
+                            <option value="finished" {% if selected_status == 'finished' %}selected{% endif %}>Finished</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Date Range</label>
+                        <div class="date-filter">
+                            <button type="submit" name="date" value="today" class="date-btn {% if selected_date == 'today' %}active{% endif %}">
+                                Today
+                            </button>
+                            <button type="submit" name="date" value="tomorrow" class="date-btn {% if selected_date == 'tomorrow' %}active{% endif %}">
+                                Tomorrow
+                            </button>
+                            <button type="submit" name="date" value="week" class="date-btn {% if selected_date == 'week' %}active{% endif %}">
+                                This Week
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Matches Grid -->
+            <div class="row">
+                {% if matches %}
+                    {% for match in matches %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="match-card">
+                            <div class="match-header">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>{{ match.sport.name }} - {{ match.league.name }}</span>
+                                    <span class="match-time">{{ match.start_time.strftime('%H:%M') }}</span>
+                                </div>
+                            </div>
+                            <div class="match-body">
+                                <div class="team-section">
+                                    <span class="team-name text-end">{{ match.home_team.name }}</span>
+                                    <span class="team-score">{{ match.home_score if match.home_score is not none else '-' }}</span>
+                                </div>
+                                <div class="text-center my-2">
+                                    <span class="vs-badge">VS</span>
+                                </div>
+                                <div class="team-section">
+                                    <span class="team-name">{{ match.away_team.name }}</span>
+                                    <span class="team-score">{{ match.away_score if match.away_score is not none else '-' }}</span>
+                                </div>
+                            </div>
+                            <div class="match-footer d-flex justify-content-between align-items-center">
+                                <span class="status-badge status-{{ match.status }}">{{ match.status.upper() }}</span>
+                                <span>{{ match.start_time.strftime('%d %b %Y') }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            No matches found matching your criteria.
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add any interactive features here
+        const dateButtons = document.querySelectorAll('.date-btn');
+        dateButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                dateButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+    });
+</script>
+{% endblock %}
