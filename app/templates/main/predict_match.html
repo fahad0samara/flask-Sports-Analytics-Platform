@@ -1,5 +1,11 @@
 {% extends "base.html" %}
 
+{% block title %}Predict {{ match.home_team.name }} vs {{ match.away_team.name }}{% endblock %}
+
+{% block meta %}
+<meta name="description" content="Make your prediction for {{ match.home_team.name }} vs {{ match.away_team.name }} - Sports Analytics Platform">
+{% endblock %}
+
 {% block styles %}
 <style>
     .prediction-card {

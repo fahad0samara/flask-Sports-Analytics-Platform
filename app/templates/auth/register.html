@@ -1,53 +1,107 @@
 {% extends "base.html" %}
+
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+{% endblock %}
+
 {% block content %}
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h1 class="text-center">Register</h1>
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <h1>Create Account</h1>
+            <p class="mb-0">Join Sports Analytics today</p>
+        </div>
+        <div class="auth-body">
+            <form action="" method="post" novalidate>
+                {{ form.hidden_tag() }}
+                <div class="form-group">
+                    {{ form.username.label(class="form-label") }}
+                    {{ form.username(size=32, class="form-control", placeholder="Choose a username") }}
+                    {% for error in form.username.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                    {% endfor %}
                 </div>
-                <div class="card-body">
-                    <form action="" method="post" novalidate>
-                        {{ form.hidden_tag() }}
-                        <div class="form-group mb-3">
-                            {{ form.username.label(class="form-label") }}
-                            {{ form.username(size=32, class="form-control") }}
-                            {% for error in form.username.errors %}
-                            <span class="text-danger">{{ error }}</span>
-                            {% endfor %}
-                        </div>
-                        <div class="form-group mb-3">
-                            {{ form.email.label(class="form-label") }}
-                            {{ form.email(size=64, class="form-control") }}
-                            {% for error in form.email.errors %}
-                            <span class="text-danger">{{ error }}</span>
-                            {% endfor %}
-                        </div>
-                        <div class="form-group mb-3">
-                            {{ form.password.label(class="form-label") }}
-                            {{ form.password(size=32, class="form-control") }}
-                            {% for error in form.password.errors %}
-                            <span class="text-danger">{{ error }}</span>
-                            {% endfor %}
-                        </div>
-                        <div class="form-group mb-3">
-                            {{ form.password2.label(class="form-label") }}
-                            {{ form.password2(size=32, class="form-control") }}
-                            {% for error in form.password2.errors %}
-                            <span class="text-danger">{{ error }}</span>
-                            {% endfor %}
-                        </div>
-                        <div class="d-grid gap-2">
-                            {{ form.submit(class="btn btn-success") }}
-                        </div>
-                    </form>
+                <div class="form-group">
+                    {{ form.email.label(class="form-label") }}
+                    {{ form.email(size=64, class="form-control", placeholder="Enter your email") }}
+                    {% for error in form.email.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                    {% endfor %}
                 </div>
-                <div class="card-footer text-center">
-                    <p>Already have an account? <a href="{{ url_for('auth.login') }}">Click to Sign In!</a></p>
+                <div class="form-group">
+                    {{ form.password.label(class="form-label") }}
+                    {{ form.password(size=32, class="form-control", placeholder="Choose a password") }}
+                    <div class="password-strength">
+                        <div class="password-strength-bar"></div>
+                    </div>
+                    {% for error in form.password.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                    {% endfor %}
+                </div>
+                <div class="form-group">
+                    {{ form.password2.label(class="form-label") }}
+                    {{ form.password2(size=32, class="form-control", placeholder="Confirm your password") }}
+                    {% for error in form.password2.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                    {% endfor %}
+                </div>
+                <div class="d-grid gap-2">
+                    {{ form.submit(class="btn auth-btn text-white") }}
+                </div>
+            </form>
+            
+            <div class="social-login">
+                <p class="text-muted">or sign up with</p>
+                <div class="social-buttons">
+                    <a href="#" class="social-btn google"><i class="fab fa-google"></i></a>
+                    <a href="#" class="social-btn facebook"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" class="social-btn twitter"><i class="fab fa-twitter"></i></a>
                 </div>
             </div>
         </div>
+        <div class="auth-footer">
+            <p class="mb-0">Already have an account? <a href="{{ url_for('auth.login') }}">Sign in</a></p>
+        </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const passwordInput = document.querySelector('input[name="password"]');
+    const strengthBar = document.querySelector('.password-strength-bar');
+    
+    passwordInput.addEventListener('input', function() {
+        const password = this.value;
+        let strength = 0;
+        
+        // Length check
+        if (password.length >= 8) strength += 1;
+        
+        // Contains number
+        if (/\d/.test(password)) strength += 1;
+        
+        // Contains letter
+        if (/[a-zA-Z]/.test(password)) strength += 1;
+        
+        // Contains special character
+        if (/[^A-Za-z0-9]/.test(password)) strength += 1;
+        
+        // Update strength bar
+        strengthBar.className = 'password-strength-bar';
+        if (strength === 0) {
+            strengthBar.style.width = '0';
+        } else if (strength <= 2) {
+            strengthBar.classList.add('strength-weak');
+        } else if (strength === 3) {
+            strengthBar.classList.add('strength-medium');
+        } else {
+            strengthBar.classList.add('strength-strong');
+        }
+    });
+});
+</script>
 {% endblock %}

@@ -1,42 +1,54 @@
 {% extends "base.html" %}
+
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+{% endblock %}
+
 {% block content %}
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h1 class="text-center">Sign In</h1>
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <h1>Welcome Back</h1>
+            <p class="mb-0">Sign in to continue to Sports Analytics</p>
+        </div>
+        <div class="auth-body">
+            <form action="" method="post" novalidate>
+                {{ form.hidden_tag() }}
+                <div class="form-group">
+                    {{ form.username.label(class="form-label") }}
+                    {{ form.username(size=32, class="form-control", placeholder="Enter your username") }}
+                    {% for error in form.username.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                    {% endfor %}
                 </div>
-                <div class="card-body">
-                    <form action="" method="post" novalidate>
-                        {{ form.hidden_tag() }}
-                        <div class="form-group mb-3">
-                            {{ form.username.label(class="form-label") }}
-                            {{ form.username(size=32, class="form-control") }}
-                            {% for error in form.username.errors %}
-                            <span class="text-danger">{{ error }}</span>
-                            {% endfor %}
-                        </div>
-                        <div class="form-group mb-3">
-                            {{ form.password.label(class="form-label") }}
-                            {{ form.password(size=32, class="form-control") }}
-                            {% for error in form.password.errors %}
-                            <span class="text-danger">{{ error }}</span>
-                            {% endfor %}
-                        </div>
-                        <div class="form-check mb-3">
-                            {{ form.remember_me(class="form-check-input") }}
-                            {{ form.remember_me.label(class="form-check-label") }}
-                        </div>
-                        <div class="d-grid gap-2">
-                            {{ form.submit(class="btn btn-primary") }}
-                        </div>
-                    </form>
+                <div class="form-group">
+                    {{ form.password.label(class="form-label") }}
+                    {{ form.password(size=32, class="form-control", placeholder="Enter your password") }}
+                    {% for error in form.password.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                    {% endfor %}
                 </div>
-                <div class="card-footer text-center">
-                    <p>New User? <a href="{{ url_for('auth.register') }}">Click to Register!</a></p>
+                <div class="form-check mb-3">
+                    {{ form.remember_me(class="form-check-input") }}
+                    {{ form.remember_me.label(class="form-check-label") }}
+                </div>
+                <div class="d-grid gap-2">
+                    {{ form.submit(class="btn auth-btn text-white") }}
+                </div>
+            </form>
+            
+            <div class="social-login">
+                <p class="text-muted">or sign in with</p>
+                <div class="social-buttons">
+                    <a href="#" class="social-btn google"><i class="fab fa-google"></i></a>
+                    <a href="#" class="social-btn facebook"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" class="social-btn twitter"><i class="fab fa-twitter"></i></a>
                 </div>
             </div>
+        </div>
+        <div class="auth-footer">
+            <p class="mb-0">New to Sports Analytics? <a href="{{ url_for('auth.register') }}">Create an account</a></p>
         </div>
     </div>
 </div>

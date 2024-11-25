@@ -1,168 +1,238 @@
 {% extends "base.html" %}
 
+{% block title %}My Predictions{% endblock %}
+
+{% block meta %}
+<meta name="description" content="View and track your sports match predictions and performance">
+{% endblock %}
+
+{% block styles %}
+<style>
+    .predictions-header {
+        background: linear-gradient(135deg, #1a2a6c 0%, #b21f1f 100%);
+        padding: 2.5rem 0;
+        margin-bottom: 2rem;
+        color: white;
+        border-radius: 20px;
+        position: relative;
+    }
+
+    .stats-card {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+    }
+
+    .stats-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .stats-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #1a2a6c 0%, #b21f1f 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .filter-card {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+    }
+
+    .predictions-group {
+        background: white;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+    }
+
+    .month-header {
+        background: #f8f9fa;
+        padding: 1rem 1.5rem;
+        font-weight: 600;
+        color: #1a2a6c;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .prediction-item {
+        padding: 1.5rem;
+        border-bottom: 1px solid #e9ecef;
+        transition: background-color 0.3s ease;
+    }
+
+    .prediction-item:hover {
+        background-color: #f8f9fa;
+    }
+
+    .status-badge {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 500;
+        font-size: 0.9rem;
+    }
+
+    .status-badge.correct {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+    }
+
+    .status-badge.incorrect {
+        background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+        color: white;
+    }
+
+    .status-badge.pending {
+        background: linear-gradient(135deg, #1a2a6c 0%, #b21f1f 100%);
+        color: white;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+    }
+
+    .empty-icon {
+        font-size: 4rem;
+        background: linear-gradient(135deg, #1a2a6c 0%, #b21f1f 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container py-4">
+<div class="container py-5">
+    <!-- Header -->
+    <div class="predictions-header mb-5">
+        <div class="container">
+            <h2 class="text-center mb-0">My Predictions</h2>
+        </div>
+    </div>
+
     <!-- Stats Overview -->
-    <div class="row mb-4">
+    <div class="row g-4 mb-5">
         <div class="col-md-4">
-            <div class="card shadow-sm">
-                <div class="card-body text-center">
-                    <h5 class="card-title text-muted">Total Predictions</h5>
-                    <h2 class="mb-0">{{ total_predictions }}</h2>
-                </div>
+            <div class="stats-card">
+                <h3 class="stats-value">{{ total_predictions }}</h3>
+                <p class="mb-0">Total Predictions</p>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card shadow-sm">
-                <div class="card-body text-center">
-                    <h5 class="card-title text-muted">Correct Predictions</h5>
-                    <h2 class="mb-0">{{ correct_predictions }}</h2>
-                </div>
+            <div class="stats-card">
+                <h3 class="stats-value">{{ correct_predictions }}</h3>
+                <p class="mb-0">Correct Predictions</p>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card shadow-sm">
-                <div class="card-body text-center">
-                    <h5 class="card-title text-muted">Accuracy</h5>
-                    <h2 class="mb-0">{{ "%.1f"|format(accuracy) }}%</h2>
-                </div>
+            <div class="stats-card">
+                <h3 class="stats-value">{{ "%.1f"|format(accuracy) }}%</h3>
+                <p class="mb-0">Accuracy</p>
             </div>
         </div>
     </div>
 
     <!-- Filters -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-body">
-            <form method="get" class="row g-3 align-items-end">
-                <div class="col-md-3">
-                    <label class="form-label">Sport</label>
-                    <select name="sport" class="form-select" onchange="this.form.submit()">
-                        <option value="">All Sports</option>
-                        {% for sport in sports %}
-                        <option value="{{ sport.id }}" {% if sport.id == selected_sport %}selected{% endif %}>
-                            {{ sport.name }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">League</label>
-                    <select name="league" class="form-select" onchange="this.form.submit()">
-                        <option value="">All Leagues</option>
-                        {% for league in leagues %}
-                        <option value="{{ league.id }}" {% if league.id == selected_league %}selected{% endif %}>
-                            {{ league.name }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Status</label>
-                    <select name="status" class="form-select" onchange="this.form.submit()">
-                        <option value="all" {% if selected_status == 'all' %}selected{% endif %}>All</option>
-                        <option value="correct" {% if selected_status == 'correct' %}selected{% endif %}>Correct</option>
-                        <option value="incorrect" {% if selected_status == 'incorrect' %}selected{% endif %}>Incorrect</option>
-                        <option value="pending" {% if selected_status == 'pending' %}selected{% endif %}>Pending</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
-                </div>
-            </form>
-        </div>
+    <div class="filter-card">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label">Sport</label>
+                <select name="sport" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Sports</option>
+                    {% for sport in sports %}
+                    <option value="{{ sport.id }}" {% if sport.id == selected_sport %}selected{% endif %}>
+                        {{ sport.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">League</label>
+                <select name="league" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Leagues</option>
+                    {% for league in leagues %}
+                    <option value="{{ league.id }}" {% if league.id == selected_league %}selected{% endif %}>
+                        {{ league.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-select" onchange="this.form.submit()">
+                    <option value="all" {% if selected_status == 'all' %}selected{% endif %}>All</option>
+                    <option value="correct" {% if selected_status == 'correct' %}selected{% endif %}>Correct</option>
+                    <option value="incorrect" {% if selected_status == 'incorrect' %}selected{% endif %}>Incorrect</option>
+                    <option value="pending" {% if selected_status == 'pending' %}selected{% endif %}>Pending</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+            </div>
+        </form>
     </div>
 
     <!-- Predictions List -->
     {% for month, matches in predictions_by_month.items() %}
-    <div class="card shadow-sm mb-4">
-        <div class="card-header bg-light">
-            <h5 class="mb-0">{{ month }}</h5>
+    <div class="predictions-group">
+        <div class="month-header">
+            {{ month }}
         </div>
-        <div class="card-body p-0">
-            <div class="list-group list-group-flush">
-                {% for match in matches %}
-                {% set prediction = current_user.get_prediction(match) %}
-                <div class="list-group-item">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div class="match-info">
-                            <div class="text-muted small">{{ match.league.name }}</div>
-                            <div class="d-flex align-items-center gap-2">
-                                <span class="team-name">{{ match.home_team.name }}</span>
-                                {% if match.status == match.STATUS_FINISHED %}
-                                <span class="score">{{ match.home_score }} - {{ match.away_score }}</span>
-                                {% else %}
-                                <span class="vs">vs</span>
-                                {% endif %}
-                                <span class="team-name">{{ match.away_team.name }}</span>
-                            </div>
-                        </div>
-                        <div class="prediction-info text-end">
-                            <div class="prediction-details">
-                                <span class="predicted-winner">
-                                    Predicted: {{ match.home_team.name if prediction.predicted_winner_id == match.home_team_id else match.away_team.name }}
-                                </span>
-                                <span class="confidence ms-2">
-                                    ({{ format_confidence(prediction.confidence) }})
-                                </span>
-                            </div>
-                            {% if match.status == match.STATUS_FINISHED %}
-                            <div class="prediction-result">
-                                {% if prediction.is_correct %}
-                                <span class="badge bg-success">Correct</span>
-                                {% else %}
-                                <span class="badge bg-danger">Incorrect</span>
-                                {% endif %}
-                            </div>
-                            {% else %}
-                            <div class="match-status">
-                                <span class="badge bg-primary">{{ match.get_time_status() }}</span>
-                            </div>
-                            {% endif %}
-                        </div>
+        {% for match in matches %}
+        {% set prediction = current_user.get_prediction(match) %}
+        <div class="prediction-item">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="match-info">
+                    <div class="text-muted small">{{ match.league.name }}</div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="fw-500">{{ match.home_team.name }}</span>
+                        {% if match.status == match.STATUS_FINISHED %}
+                        <span class="fw-bold text-danger">{{ match.home_score }} - {{ match.away_score }}</span>
+                        {% else %}
+                        <span class="badge bg-primary">VS</span>
+                        {% endif %}
+                        <span class="fw-500">{{ match.away_team.name }}</span>
+                    </div>
+                    <div class="mt-2">
+                        <span class="fw-500">
+                            Predicted: {{ match.home_team.name if prediction.predicted_winner_id == match.home_team_id else match.away_team.name }}
+                        </span>
+                        <span class="text-muted ms-2">
+                            ({{ format_confidence(prediction.confidence) }})
+                        </span>
                     </div>
                 </div>
-                {% endfor %}
+                <div class="prediction-status">
+                    {% if match.status == match.STATUS_FINISHED %}
+                        {% if prediction.is_correct %}
+                        <span class="status-badge correct">Correct</span>
+                        {% else %}
+                        <span class="status-badge incorrect">Incorrect</span>
+                        {% endif %}
+                    {% else %}
+                        <span class="status-badge pending">{{ match.get_time_status() }}</span>
+                    {% endif %}
+                </div>
             </div>
         </div>
+        {% endfor %}
     </div>
     {% else %}
-    <div class="text-center py-5">
-        <div class="mb-3">
-            <i class="fas fa-chart-line fa-3x text-muted"></i>
-        </div>
-        <h4>No predictions yet</h4>
+    <div class="empty-state">
+        <i class="fas fa-chart-line empty-icon"></i>
+        <h4 class="mt-4">No predictions yet</h4>
         <p class="text-muted">Start making predictions to see them here!</p>
-        <a href="{{ url_for('main.matches') }}" class="btn btn-primary">
+        <a href="{{ url_for('main.matches') }}" class="btn btn-primary btn-lg">
             View Matches
         </a>
     </div>
     {% endfor %}
 </div>
-
-{% block styles %}
-<style>
-.match-info {
-    flex: 1;
-}
-.team-name {
-    font-weight: 500;
-}
-.score, .vs {
-    font-weight: 600;
-    padding: 0 8px;
-}
-.prediction-info {
-    text-align: right;
-}
-.prediction-details {
-    font-size: 0.9rem;
-}
-.confidence {
-    color: #666;
-}
-.prediction-result {
-    margin-top: 4px;
-}
-</style>
-{% endblock %}
 {% endblock %}

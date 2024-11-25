@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1440" height="1024" viewBox="0 0 1440 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <filter id="glow">
+            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+            <feMerge>
+                <feMergeNode in="coloredBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+        </filter>
+    </defs>
+    <g opacity="0.15">
+        <!-- Large circles -->
+        <circle cx="100" cy="100" r="20" fill="white" filter="url(#glow)"/>
+        <circle cx="500" cy="150" r="25" fill="white" filter="url(#glow)"/>
+        <circle cx="900" cy="100" r="15" fill="white" filter="url(#glow)"/>
+        <circle cx="1300" cy="150" r="20" fill="white" filter="url(#glow)"/>
+        
+        <!-- Medium circles -->
+        <circle cx="300" cy="300" r="12" fill="white" filter="url(#glow)"/>
+        <circle cx="700" cy="350" r="15" fill="white" filter="url(#glow)"/>
+        <circle cx="1100" cy="300" r="12" fill="white" filter="url(#glow)"/>
+        
+        <!-- Small circles -->
+        <circle cx="200" cy="500" r="8" fill="white" filter="url(#glow)"/>
+        <circle cx="600" cy="550" r="10" fill="white" filter="url(#glow)"/>
+        <circle cx="1000" cy="500" r="8" fill="white" filter="url(#glow)"/>
+        <circle cx="1400" cy="550" r="10" fill="white" filter="url(#glow)"/>
+        
+        <!-- Diagonal lines -->
+        <line x1="0" y1="200" x2="200" y2="0" stroke="white" stroke-width="1" opacity="0.3"/>
+        <line x1="400" y1="600" x2="600" y2="400" stroke="white" stroke-width="1" opacity="0.3"/>
+        <line x1="800" y1="1000" x2="1000" y2="800" stroke="white" stroke-width="1" opacity="0.3"/>
+        
+        <!-- Additional decorative elements -->
+        <rect x="150" y="150" width="4" height="4" fill="white" transform="rotate(45 150 150)"/>
+        <rect x="450" y="450" width="4" height="4" fill="white" transform="rotate(45 450 450)"/>
+        <rect x="750" y="750" width="4" height="4" fill="white" transform="rotate(45 750 750)"/>
+        <rect x="1050" y="150" width="4" height="4" fill="white" transform="rotate(45 1050 150)"/>
+    </g>
+</svg>

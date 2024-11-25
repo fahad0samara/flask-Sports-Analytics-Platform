@@ -1,85 +1,169 @@
 {% extends "base.html" %}
 
+{% block styles %}
+{{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
+{% endblock %}
+
 {% block content %}
 <div class="landing-container">
     <!-- Hero Section -->
-    <section class="hero">
+    <section class="hero-section">
         <div class="hero-content">
-            <h1>Welcome to Sports Analytics Pro</h1>
-            <p>Your ultimate platform for sports predictions, live tracking, and in-depth analytics</p>
+            <h1 class="hero-title">Predict. Analyze. Win.</h1>
+            <p class="hero-subtitle">Harness the power of AI for unparalleled sports predictions and analytics</p>
             {% if current_user.is_authenticated %}
-                <a href="{{ url_for('main.index') }}" class="btn btn-primary">Go to Dashboard</a>
+                <a href="{{ url_for('main.index') }}" class="btn btn-primary btn-glow">Go to Dashboard</a>
             {% else %}
-                <div class="hero-buttons">
-                    <a href="{{ url_for('auth.login') }}" class="btn btn-primary">Login</a>
-                    <a href="{{ url_for('auth.register') }}" class="btn btn-secondary">Sign Up</a>
+                <div class="hero-cta">
+                    <a href="{{ url_for('auth.register') }}" class="hero-button primary">Get Started</a>
+                    <a href="#features" class="hero-button secondary">Learn More</a>
                 </div>
             {% endif %}
+            <div class="hero-stats">
+                <div class="stat-item">
+                    <span class="stat-number">{{ total_matches }}</span>
+                    <span class="stat-label">Matches Analyzed</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">{{ total_users }}</span>
+                    <span class="stat-label">Active Users</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">{{ total_predictions }}</span>
+                    <span class="stat-label">Predictions Made</span>
+                </div>
+            </div>
+        </div>
+        <div class="hero-image">
+            <img src="{{ url_for('static', filename='img/hero-illustration.svg') }}" alt="Sports Analytics">
         </div>
     </section>
 
-    <!-- Platform Stats -->
-    <section class="stats">
-        <div class="stats-grid">
-            <div class="stat-card">
-                <h3>{{ total_matches }}</h3>
-                <p>Total Matches</p>
+    <!-- Features Section -->
+    <section class="features">
+        <div class="section-header">
+            <h2>Why Choose Sports Analytics Pro?</h2>
+            <p>Unlock the power of data-driven sports analysis</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <h3>AI-Powered Predictions</h3>
+                <p>Advanced machine learning algorithms analyze historical data to provide accurate match predictions</p>
             </div>
-            <div class="stat-card">
-                <h3>{{ total_users }}</h3>
-                <p>Active Users</p>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h3>Real-time Analytics</h3>
+                <p>Track live match statistics and performance metrics as they happen</p>
             </div>
-            <div class="stat-card">
-                <h3>{{ total_predictions }}</h3>
-                <p>Predictions Made</p>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h3>Community Insights</h3>
+                <p>Share and discuss predictions with a community of sports enthusiasts</p>
             </div>
         </div>
     </section>
 
-    <!-- Featured Matches -->
+    <!-- Live Matches Section -->
     {% if featured_matches %}
-    <section class="featured-matches">
-        <h2>Featured Matches</h2>
+    <section class="live-matches">
+        <div class="section-header">
+            <h2>Featured Matches</h2>
+            <p>Stay updated with the latest matches and make your predictions</p>
+        </div>
         <div class="matches-grid">
             {% for match in featured_matches %}
             <div class="match-card">
                 <div class="match-header">
-                    <span class="match-sport">{{ match.sport.name }}</span>
+                    <span class="match-league">{{ match.league.name }}</span>
                     <span class="match-status {{ match.status }}">{{ match.status|title }}</span>
                 </div>
                 <div class="match-teams">
                     <div class="team home">
                         <img src="{{ match.home_team.logo_url or url_for('static', filename='img/default_team.png') }}" alt="{{ match.home_team.name }}">
-                        <span>{{ match.home_team.name }}</span>
-                    </div>
-                    <div class="match-score">
+                        <span class="team-name">{{ match.home_team.name }}</span>
                         {% if match.status == 'live' or match.status == 'completed' %}
-                            <span>{{ match.home_score }} - {{ match.away_score }}</span>
+                        <span class="team-score">{{ match.home_score }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="match-vs">
+                        {% if match.status == 'scheduled' %}
+                        <span>VS</span>
                         {% else %}
-                            <span>VS</span>
+                        <span class="match-time">{{ match.start_time.strftime('%H:%M') }}</span>
                         {% endif %}
                     </div>
                     <div class="team away">
                         <img src="{{ match.away_team.logo_url or url_for('static', filename='img/default_team.png') }}" alt="{{ match.away_team.name }}">
-                        <span>{{ match.away_team.name }}</span>
+                        <span class="team-name">{{ match.away_team.name }}</span>
+                        {% if match.status == 'live' or match.status == 'completed' %}
+                        <span class="team-score">{{ match.away_score }}</span>
+                        {% endif %}
                     </div>
                 </div>
                 <div class="match-footer">
-                    <span class="match-time">{{ match.start_time.strftime('%d %b %Y %H:%M') }}</span>
+                    <span class="match-date">{{ match.start_time.strftime('%d %b %Y') }}</span>
                     {% if not current_user.is_authenticated %}
-                        <a href="{{ url_for('auth.login') }}" class="btn btn-sm btn-primary">Login to Predict</a>
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-sm btn-primary">Predict Now</a>
                     {% endif %}
                 </div>
             </div>
             {% endfor %}
         </div>
+        {% if not current_user.is_authenticated %}
+        <div class="matches-cta">
+            <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">Join Now to Make Predictions</a>
+        </div>
+        {% endif %}
+    </section>
+    {% endif %}
+
+    <!-- How It Works -->
+    <section class="how-it-works">
+        <div class="section-header">
+            <h2>How It Works</h2>
+            <p>Start making data-driven predictions in three simple steps</p>
+        </div>
+        <div class="steps-grid">
+            <div class="step-card">
+                <div class="step-number">1</div>
+                <h3>Create Account</h3>
+                <p>Sign up for free and join our community of sports analysts</p>
+            </div>
+            <div class="step-card">
+                <div class="step-number">2</div>
+                <h3>Analyze Matches</h3>
+                <p>Use our AI-powered tools to analyze upcoming matches</p>
+            </div>
+            <div class="step-card">
+                <div class="step-number">3</div>
+                <h3>Make Predictions</h3>
+                <p>Submit your predictions and track your success rate</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    {% if not current_user.is_authenticated %}
+    <section class="cta">
+        <div class="cta-content">
+            <h2>Ready to Transform Your Sports Analysis?</h2>
+            <p>Join thousands of users making smarter predictions with Sports Analytics Pro</p>
+            <div class="cta-buttons">
+                <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg btn-glow">Get Started Free</a>
+                <a href="{{ url_for('auth.login') }}" class="btn btn-outline btn-lg">Sign In</a>
+            </div>
+        </div>
     </section>
     {% endif %}
 </div>
-{% endblock %}
-
-{% block styles %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
 {% endblock %}
 
 {% block scripts %}

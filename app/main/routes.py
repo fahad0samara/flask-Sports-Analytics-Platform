@@ -5,6 +5,7 @@ from flask_login import current_user, login_required
 from app import db
 from app.main import bp
 from app.models import User, Sport, League, Team, Match, News, Analysis, Prediction
+from app.main.forms import EditProfileForm, ContactForm
 
 @bp.route('/')
 @bp.route('/index')
@@ -1142,7 +1143,7 @@ def predict_match(match_id):
     
     return render_template('main/predict_match.html', 
                          match=match,
-                         title=f"Predict: {match.home_team.name} vs {match.away_team.name}")
+                         title=f"Make Your Prediction | {match.home_team.name} vs {match.away_team.name}")
 
 @bp.route('/get_leagues')
 @login_required

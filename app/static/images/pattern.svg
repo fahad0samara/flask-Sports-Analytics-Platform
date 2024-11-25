@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800" height="600" viewBox="0 0 800 600" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Background mesh -->
+    <rect width="800" height="600" fill="url(#gradient_bg)"/>
+    
+    <defs>
+        <!-- Background gradient -->
+        <linearGradient id="gradient_bg" x1="0" y1="0" x2="800" y2="600" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.05"/>
+            <stop offset="100%" stop-color="#ffffff" stop-opacity="0.02"/>
+        </linearGradient>
+        
+        <!-- Circle glow effect -->
+        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur"/>
+            <feComposite in="blur" in2="SourceGraphic" operator="over"/>
+        </filter>
+    </defs>
+    
+    <!-- Grid pattern -->
+    <pattern id="grid" x="0" y="0" width="50" height="50" patternUnits="userSpaceOnUse">
+        <path d="M 50 0 L 0 0 0 50" fill="none" stroke="white" stroke-width="0.5" opacity="0.1"/>
+    </pattern>
+    <rect width="100%" height="100%" fill="url(#grid)"/>
+    
+    <!-- Decorative elements -->
+    <g filter="url(#glow)">
+        <!-- Large glowing circles -->
+        <circle cx="200" cy="150" r="4" fill="white" opacity="0.6"/>
+        <circle cx="600" cy="450" r="4" fill="white" opacity="0.6"/>
+        <circle cx="400" cy="300" r="6" fill="white" opacity="0.7"/>
+        
+        <!-- Small dots -->
+        <circle cx="100" cy="100" r="2" fill="white" opacity="0.4"/>
+        <circle cx="300" cy="200" r="2" fill="white" opacity="0.4"/>
+        <circle cx="500" cy="400" r="2" fill="white" opacity="0.4"/>
+        <circle cx="700" cy="500" r="2" fill="white" opacity="0.4"/>
+        
+        <!-- Connecting lines -->
+        <line x1="200" y1="150" x2="400" y2="300" stroke="white" stroke-width="0.5" opacity="0.2"/>
+        <line x1="400" y1="300" x2="600" y2="450" stroke="white" stroke-width="0.5" opacity="0.2"/>
+    </g>
+    
+    <!-- Additional decorative shapes -->
+    <g opacity="0.3">
+        <rect x="150" y="150" width="4" height="4" fill="white" transform="rotate(45 150 150)"/>
+        <rect x="450" y="450" width="4" height="4" fill="white" transform="rotate(45 450 450)"/>
+        <rect x="650" y="250" width="4" height="4" fill="white" transform="rotate(45 650 250)"/>
+    </g>
+</svg>
