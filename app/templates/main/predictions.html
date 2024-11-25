@@ -2,37 +2,129 @@
 
 {% block styles %}
 <style>
+    /* Enhanced Gradient Backgrounds */
     .page-header {
-        background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-        padding: 2rem 0;
+        background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
+        padding: 3rem 0;
         margin-bottom: 2rem;
         color: white;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        position: relative;
+        overflow: hidden;
     }
 
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M0 0h20v20H0z" fill="none"/><path d="M10 0l10 10-10 10L0 10z" fill="rgba(255,255,255,0.05)"/></svg>') repeat;
+        opacity: 0.3;
+    }
+
+    .page-header h1 {
+        font-weight: 800;
+        letter-spacing: -0.5px;
+        margin-bottom: 0.5rem;
+        font-size: 2.5rem;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .page-header p {
+        font-size: 1.1rem;
+        opacity: 0.9;
+    }
+
+    /* Enhanced Filter Section */
+    .filter-section {
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.05);
+        margin-bottom: 2rem;
+        border: 1px solid rgba(99, 102, 241, 0.1);
+    }
+
+    .filter-title {
+        color: #4F46E5;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        font-size: 1.25rem;
+    }
+
+    .filter-title i {
+        background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-right: 0.75rem;
+    }
+
+    .form-select {
+        border-radius: 12px;
+        border: 1px solid rgba(99, 102, 241, 0.2);
+        padding: 0.75rem 1rem;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-select:focus {
+        border-color: #6366F1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+
+    .form-label {
+        color: #4B5563;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Enhanced Prediction Cards */
     .prediction-card {
         background: white;
-        border-radius: 15px;
+        border-radius: 20px;
         overflow: hidden;
-        margin-bottom: 1.5rem;
+        margin-bottom: 2rem;
         transition: all 0.3s ease;
-        border: 1px solid rgba(0,0,0,0.05);
+        border: 1px solid rgba(99, 102, 241, 0.1);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.02);
     }
 
     .prediction-card:hover {
         transform: translateY(-5px);
-        box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+        box-shadow: 0 12px 30px rgba(0,0,0,0.1);
+        border-color: rgba(99, 102, 241, 0.2);
     }
 
     .prediction-header {
-        background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+        background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
         color: white;
-        padding: 1rem;
+        padding: 1.5rem;
         position: relative;
     }
 
+    .prediction-header::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #6366F1, #4F46E5, #6366F1);
+        background-size: 200% 100%;
+        animation: gradient-shift 3s linear infinite;
+    }
+
+    @keyframes gradient-shift {
+        0% { background-position: 0% 0%; }
+        100% { background-position: 200% 0%; }
+    }
+
     .prediction-body {
-        padding: 1.5rem;
+        padding: 2rem;
     }
 
     .team-prediction {
@@ -40,100 +132,188 @@
         align-items: center;
         justify-content: space-between;
         margin: 1rem 0;
-        padding: 0.8rem;
-        border-radius: 10px;
-        background: #f8f9fa;
+        padding: 1rem 1.5rem;
+        border-radius: 15px;
+        background: #F9FAFB;
+        transition: all 0.3s ease;
+    }
+
+    .team-prediction:hover {
+        background: #F3F4F6;
+        transform: scale(1.02);
     }
 
     .team-name {
-        font-weight: 600;
-        color: #2c3e50;
+        font-weight: 700;
+        color: #1F2937;
+        font-size: 1.1rem;
     }
 
     .prediction-percentage {
-        font-size: 1.2rem;
-        font-weight: 700;
-        color: #6a11cb;
+        font-size: 1.3rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
     }
 
     .prediction-bar {
-        height: 8px;
-        background: #e9ecef;
-        border-radius: 4px;
-        margin: 0.5rem 0;
+        height: 10px;
+        background: #E5E7EB;
+        border-radius: 5px;
+        margin: 0.75rem 0;
         overflow: hidden;
     }
 
     .prediction-fill {
         height: 100%;
-        background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%);
-        border-radius: 4px;
-        transition: width 0.3s ease;
+        background: linear-gradient(90deg, #6366F1, #4F46E5);
+        border-radius: 5px;
+        transition: width 0.6s ease;
     }
 
     .prediction-stats {
         display: flex;
         justify-content: space-around;
-        margin-top: 1rem;
-        padding-top: 1rem;
-        border-top: 1px solid #e9ecef;
+        margin-top: 2rem;
+        padding: 1.5rem;
+        background: #F9FAFB;
+        border-radius: 15px;
     }
 
     .stat-item {
         text-align: center;
+        padding: 0.5rem 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .stat-item:hover {
+        transform: translateY(-3px);
     }
 
     .stat-value {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: #6a11cb;
+        font-size: 1.75rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 0.5rem;
     }
 
     .stat-label {
         font-size: 0.9rem;
-        color: #6c757d;
-    }
-
-    .filter-section {
-        background: white;
-        border-radius: 15px;
-        padding: 1.5rem;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        margin-bottom: 2rem;
-    }
-
-    .filter-title {
-        color: #6a11cb;
-        font-weight: 600;
-        margin-bottom: 1.5rem;
-    }
-
-    .prediction-footer {
-        background: #f8f9fa;
-        padding: 1rem;
-        border-top: 1px solid rgba(0,0,0,0.05);
+        color: #6B7280;
+        font-weight: 500;
     }
 
     .confidence-badge {
-        padding: 0.4rem 1rem;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 600;
+        padding: 0.5rem 1.25rem;
+        border-radius: 25px;
+        font-size: 0.9rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
     .confidence-high {
-        background: #28a745;
+        background: linear-gradient(135deg, #34D399 0%, #10B981 100%);
         color: white;
     }
 
     .confidence-medium {
-        background: #ffc107;
-        color: #212529;
+        background: linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%);
+        color: white;
     }
 
     .confidence-low {
-        background: #dc3545;
+        background: linear-gradient(135deg, #F87171 0%, #EF4444 100%);
         color: white;
+    }
+
+    .prediction-footer {
+        background: #F9FAFB;
+        padding: 1.5rem;
+        border-top: 1px solid rgba(99, 102, 241, 0.1);
+        text-align: center;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
+        border: none;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px rgba(99, 102, 241, 0.2);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(99, 102, 241, 0.3);
+        background: linear-gradient(135deg, #4F46E5 0%, #4338CA 100%);
+    }
+
+    .alert-info {
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(79, 70, 229, 0.1) 100%);
+        border: 1px solid rgba(99, 102, 241, 0.2);
+        color: #4F46E5;
+        border-radius: 15px;
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        font-weight: 500;
+    }
+
+    .alert-info i {
+        font-size: 1.5rem;
+        margin-right: 1rem;
+        color: #6366F1;
+    }
+
+    /* Responsive Design Improvements */
+    @media (max-width: 768px) {
+        .page-header {
+            padding: 2rem 0;
+        }
+
+        .page-header h1 {
+            font-size: 2rem;
+        }
+
+        .prediction-stats {
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .stat-item {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(99, 102, 241, 0.1);
+        }
+
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+
+        .team-prediction {
+            padding: 1rem;
+        }
+
+        .prediction-percentage {
+            font-size: 1.1rem;
+        }
+    }
+
+    /* Loading Animation */
+    @keyframes shimmer {
+        0% { background-position: -1000px 0; }
+        100% { background-position: 1000px 0; }
+    }
+
+    .loading {
+        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+        background-size: 1000px 100%;
+        animation: shimmer 2s infinite linear;
     }
 </style>
 {% endblock %}
