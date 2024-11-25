@@ -346,10 +346,13 @@ class Analysis(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     likes = db.Column(db.Integer, default=0)
+    is_correct = db.Column(db.Boolean, default=False)
+    confidence_score = db.Column(db.Float, default=0.0)
+    analysis_type = db.Column(db.String(50), default='prediction')  # prediction, post-match, etc.
     
     user = db.relationship('User', back_populates='analyses')
     match = db.relationship('Match', back_populates='analyses')
-
+    
     def __repr__(self):
         return f'<Analysis {self.id} by User {self.user_id} for Match {self.match_id}>'
     
@@ -361,7 +364,10 @@ class Analysis(db.Model):
             'content': self.content,
             'created_at': self.created_at.isoformat(),
             'updated_at': self.updated_at.isoformat(),
-            'likes': self.likes
+            'likes': self.likes,
+            'is_correct': self.is_correct,
+            'confidence_score': self.confidence_score,
+            'analysis_type': self.analysis_type
         }
 
 class News(db.Model):
