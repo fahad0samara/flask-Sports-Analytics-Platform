@@ -1,18 +1,19 @@
-from flask import render_template, redirect, url_for, request, jsonify, flash, current_app
-from flask_login import login_required, current_user
-from datetime import datetime, timedelta
-from sqlalchemy import func, or_
-from app.models import Match, Prediction, User, Team, Sport, db, Analysis, PlayerStatistics, News
+from datetime import datetime
+from sqlalchemy import or_, func
+from flask import render_template, flash, redirect, url_for, request, current_app, jsonify
+from flask_login import current_user, login_required
+from app import db
 from app.main import bp
-from app.utils.helper_functions import (
-    get_featured_matches,
-    get_recent_predictions,
-    get_trending_news,
-    get_top_leagues,
-    get_latest_news
+from app.models import User, Sport, League, Team, Match, News, Analysis
+from app.main.utils import (
+    calculate_match_predictions,
+    prediction_confidence,
+    calculate_team_form,
+    calculate_head_to_head,
+    calculate_league_position_trend,
+    get_injury_report,
+    calculate_goal_statistics
 )
-from app.utils.api_integrations import SportsDataAggregator
-from sqlalchemy.exc import SQLAlchemyError
 
 @bp.route('/')
 def landing():
@@ -23,13 +24,13 @@ def landing():
     # Get platform statistics
     total_matches = Match.query.count()
     total_users = User.query.count()
-    total_predictions = Prediction.query.count()
+    total_predictions = Analysis.query.count()
     
     # Get featured matches and news
-    featured_matches = get_featured_matches(6)
-    latest_news = get_latest_news(5)
-    trending_news = get_trending_news(5)
-    top_leagues = get_top_leagues(5)
+    featured_matches = Match.query.filter_by(status='live').order_by(Match.start_time.desc()).limit(6).all()
+    latest_news = News.query.order_by(News.created_at.desc()).limit(5).all()
+    trending_news = News.query.order_by(News.views.desc()).limit(5).all()
+    top_leagues = League.query.order_by(League.name).limit(5).all()
     
     return render_template('main/landing.html',
         total_matches=total_matches,
@@ -60,16 +61,16 @@ def index():
     ).order_by(Match.start_time).limit(6).all()
     
     # Get user's recent predictions
-    predictions = Prediction.query.filter_by(
+    predictions = Analysis.query.filter_by(
         user_id=current_user.id
-    ).order_by(Prediction.created_at.desc()).limit(6).all()
+    ).order_by(Analysis.created_at.desc()).limit(6).all()
     
     # Calculate prediction statistics
-    total_predictions = Prediction.query.filter_by(
+    total_predictions = Analysis.query.filter_by(
         user_id=current_user.id
     ).count()
     
-    correct_predictions = Prediction.query.filter_by(
+    correct_predictions = Analysis.query.filter_by(
         user_id=current_user.id,
         is_correct=True
     ).count()
@@ -141,12 +142,12 @@ def matches():
             func.date(Match.start_time) == today
         )
     elif date_filter == 'tomorrow':
-        tomorrow = today + timedelta(days=1)
+        tomorrow = today + datetime.timedelta(days=1)
         query = query.filter(
             func.date(Match.start_time) == tomorrow
         )
     elif date_filter == 'week':
-        week_end = today + timedelta(days=7)
+        week_end = today + datetime.timedelta(days=7)
         query = query.filter(
             func.date(Match.start_time).between(today, week_end)
         )
@@ -591,7 +592,7 @@ def live_matches():
     """Get all currently live matches with latest scores"""
     try:
         # Get matches that are either live or recently finished
-        cutoff_time = datetime.utcnow() - timedelta(hours=2)
+        cutoff_time = datetime.utcnow() - datetime.timedelta(hours=2)
         matches = Match.query.filter(
             db.or_(
                 Match.status == Match.STATUS_LIVE,
@@ -868,6 +869,15 @@ def predictions():
         
     matches = query.order_by(Match.start_time).all()
     
+    # Calculate predictions for each match
+    for match in matches:
+        predictions = calculate_match_predictions(match)
+        match.home_win_probability = predictions['home_win_probability']
+        match.away_win_probability = predictions['away_win_probability']
+        match.total_goals_prediction = predictions['total_goals_prediction']
+        match.possession_home = predictions['possession_home']
+        match.shots_prediction = predictions['shots_prediction']
+    
     # Filter by confidence if specified
     if confidence:
         matches = [m for m in matches if prediction_confidence(m) == confidence]
@@ -904,7 +914,7 @@ def team_stats():
             or_(Match.home_team_id == team_id, Match.away_team_id == team_id)
         ).order_by(Match.start_time.desc()).all()
         
-        # Add statistics to team object
+        # Add basic statistics
         selected_team.matches_played = len(matches)
         selected_team.wins = sum(1 for m in matches if 
             (m.home_team_id == team_id and m.home_score > m.away_score) or
@@ -912,8 +922,23 @@ def team_stats():
         selected_team.draws = sum(1 for m in matches if m.home_score == m.away_score)
         selected_team.losses = selected_team.matches_played - selected_team.wins - selected_team.draws
         
-        # Calculate percentages
+        # Calculate percentages and advanced stats
         selected_team.win_rate = round((selected_team.wins / selected_team.matches_played) * 100 if selected_team.matches_played > 0 else 0)
+        selected_team.form = calculate_team_form(selected_team)
+        selected_team.position_trend = calculate_league_position_trend(selected_team)
+        selected_team.injuries = get_injury_report(selected_team)
+        
+        # Get goal statistics
+        goal_stats = calculate_goal_statistics(selected_team)
+        selected_team.goals_scored = goal_stats['goals_scored']
+        selected_team.goals_conceded = goal_stats['goals_conceded']
+        selected_team.clean_sheets = goal_stats['clean_sheets']
+        selected_team.failed_to_score = goal_stats['failed_to_score']
+        
+        # Calculate goal scoring rate for progress bar
+        max_goals = 60  # Arbitrary maximum for progress bar
+        selected_team.goals_percentage = min(round((goal_stats['goals_scored'] / max_goals) * 100), 100)
+        selected_team.clean_sheet_percentage = round((goal_stats['clean_sheets'] / selected_team.matches_played) * 100 if selected_team.matches_played > 0 else 0)
         
         # Get recent matches
         selected_team.recent_matches = []
