@@ -2,9 +2,10 @@
 
 A modern, AI-powered sports analytics platform built with Flask, featuring real-time predictions, beautiful UI, and comprehensive analytics tools.
 
-<div align="center">
-  <img src="app/static/images/hero-illustration.svg" alt="Sports Analytics Platform" width="600px">
-</div>
+  ![screencapture-127-0-0-1-2569-index-2024-11-25-16_43_48](https://github.com/user-attachments/assets/d8ea6c0f-789e-4cd5-8a24-7505fe560ca4)
+
+
+
 
 ## 🌟 Features
 
@@ -78,7 +79,6 @@ A modern, AI-powered sports analytics platform built with Flask, featuring real-
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
 cd sports_analytics
 ```
 
@@ -325,6 +325,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - Sports Data Providers
 - Open Source Community
 
-## 📞 Support
 
-For support, email support@sportsanalytics.com or join our Discord community.
