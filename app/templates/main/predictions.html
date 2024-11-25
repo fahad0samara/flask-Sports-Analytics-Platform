@@ -196,38 +196,73 @@
                             <div class="small">{{ match.sport.name }} - {{ match.league.name }}</div>
                             <div>{{ match.start_time.strftime('%d %b %Y, %H:%M') }}</div>
                         </div>
+                        {% if prediction_confidence is defined %}
                         {% set confidence = prediction_confidence(match) %}
                         <span class="confidence-badge confidence-{{ confidence }}">
                             {{ confidence.upper() }} CONFIDENCE
                         </span>
+                        {% else %}
+                        <span class="confidence-badge confidence-medium">
+                            MEDIUM CONFIDENCE
+                        </span>
+                        {% endif %}
                     </div>
                 </div>
                 <div class="prediction-body">
                     <div class="team-prediction">
                         <span class="team-name">{{ match.home_team.name }}</span>
+                        {% if calculate_match_predictions is defined %}
+                        {% set predictions = calculate_match_predictions(match) %}
+                        <span class="prediction-percentage">{{ predictions.home_win_probability }}%</span>
+                        {% else %}
                         <span class="prediction-percentage">{{ match.home_win_probability }}%</span>
+                        {% endif %}
                     </div>
                     <div class="prediction-bar">
+                        {% if calculate_match_predictions is defined %}
+                        <div class="prediction-fill" style="width: {{ predictions.home_win_probability }}%"></div>
+                        {% else %}
                         <div class="prediction-fill" style="width: {{ match.home_win_probability }}%"></div>
+                        {% endif %}
                     </div>
                     <div class="team-prediction">
                         <span class="team-name">{{ match.away_team.name }}</span>
+                        {% if calculate_match_predictions is defined %}
+                        <span class="prediction-percentage">{{ predictions.away_win_probability }}%</span>
+                        {% else %}
                         <span class="prediction-percentage">{{ match.away_win_probability }}%</span>
+                        {% endif %}
                     </div>
                     <div class="prediction-bar">
+                        {% if calculate_match_predictions is defined %}
+                        <div class="prediction-fill" style="width: {{ predictions.away_win_probability }}%"></div>
+                        {% else %}
                         <div class="prediction-fill" style="width: {{ match.away_win_probability }}%"></div>
+                        {% endif %}
                     </div>
                     <div class="prediction-stats">
                         <div class="stat-item">
+                            {% if calculate_match_predictions is defined %}
+                            <div class="stat-value">{{ predictions.total_goals_prediction }}</div>
+                            {% else %}
                             <div class="stat-value">{{ match.total_goals_prediction }}</div>
+                            {% endif %}
                             <div class="stat-label">Predicted Goals</div>
                         </div>
                         <div class="stat-item">
+                            {% if calculate_match_predictions is defined %}
+                            <div class="stat-value">{{ predictions.possession_home }}%</div>
+                            {% else %}
                             <div class="stat-value">{{ match.possession_home }}%</div>
+                            {% endif %}
                             <div class="stat-label">Home Possession</div>
                         </div>
                         <div class="stat-item">
+                            {% if calculate_match_predictions is defined %}
+                            <div class="stat-value">{{ predictions.shots_prediction }}</div>
+                            {% else %}
                             <div class="stat-value">{{ match.shots_prediction }}</div>
+                            {% endif %}
                             <div class="stat-label">Total Shots</div>
                         </div>
                     </div>

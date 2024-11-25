@@ -1,5 +1,5 @@
-from datetime import datetime
-from sqlalchemy import or_, func
+from datetime import datetime, timedelta
+from sqlalchemy import or_, func, and_
 from flask import render_template, flash, redirect, url_for, request, current_app, jsonify
 from flask_login import current_user, login_required
 from app import db
@@ -979,15 +979,25 @@ def utility_processor():
     """Add utility functions and variables to template context"""
     def format_date(date):
         if date:
-            return date.strftime('%Y-%m-%d %H:%M')
+            return date.strftime('%Y-%m-%d')
         return ''
-    
-    # Get all sports for navigation
-    sports = Sport.query.all()
-    
+
+    def format_datetime(dt):
+        if dt:
+            return dt.strftime('%Y-%m-%d %H:%M')
+        return ''
+
+    def format_time(dt):
+        if dt:
+            return dt.strftime('%H:%M')
+        return ''
+        
     return dict(
         format_date=format_date,
-        sports=sports
+        format_datetime=format_datetime,
+        format_time=format_time,
+        prediction_confidence=prediction_confidence,
+        calculate_match_predictions=calculate_match_predictions
     )
 
 def get_paginated_news(page=1, sport=None, search=None):
