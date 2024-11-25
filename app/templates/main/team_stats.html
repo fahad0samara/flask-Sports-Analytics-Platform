@@ -291,237 +291,380 @@
             font-size: 1.6rem;
         }
     }
+
+    .team-logo {
+        max-height: 40px;
+        width: auto;
+    }
+
+    .stat-card {
+        padding: 15px;
+        border-radius: 8px;
+        background-color: #f8f9fa;
+        height: 100%;
+    }
+
+    .form-indicators {
+        display: flex;
+        justify-content: center;
+        gap: 5px;
+    }
+
+    .form-indicator {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: bold;
+        color: white;
+    }
+
+    .form-indicator.W {
+        background-color: #28a745;
+    }
+
+    .form-indicator.D {
+        background-color: #ffc107;
+    }
+
+    .form-indicator.L {
+        background-color: #dc3545;
+    }
+
+    .next-match-card {
+        padding: 20px;
+        border-radius: 8px;
+        background-color: #f8f9fa;
+    }
+
+    .progress {
+        height: 8px;
+        margin-top: 5px;
+    }
+
+    .progress-fill {
+        transition: width 1s ease-in-out;
+    }
+
+    @keyframes progressAnimation {
+        from { width: 0; }
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: rgba(0,0,0,.075);
+        cursor: pointer;
+    }
+
+    .position-badge {
+        font-size: 1.1em;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .stat-card {
+            margin-bottom: 15px;
+        }
+        
+        .table-responsive {
+            margin-bottom: 15px;
+        }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <div class="container">
-        <h1 class="mb-0">Team Statistics</h1>
-        <p class="mb-0 mt-2 text-light">Comprehensive performance analysis and insights</p>
-    </div>
-</div>
-
-<div class="container">
-    <div class="filter-section">
-        <h5 class="filter-title">
-            <i class="fas fa-filter"></i>
-            Select Team
-        </h5>
-        <form method="get" class="row g-4">
-            <div class="col-md-4">
-                <label class="form-label">Sport</label>
-                <select id="sport" name="sport" class="form-select">
-                    <option value="">All Sports</option>
-                    {% for sport in sports %}
-                    <option value="{{ sport.id }}" {% if selected_sport == sport.id %}selected{% endif %}>
-                        {{ sport.name }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">League</label>
-                <select id="league" name="league" class="form-select">
-                    <option value="">All Leagues</option>
-                    {% for league in leagues %}
-                    <option value="{{ league.id }}" {% if selected_league == league.id %}selected{% endif %}>
-                        {{ league.name }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">Team</label>
-                <select id="team" name="team" class="form-select">
-                    <option value="">Select Team</option>
-                    {% for team in teams %}
-                    <option value="{{ team.id }}" {% if selected_team == team.id %}selected{% endif %}>
-                        {{ team.name }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-        </form>
-    </div>
-
-    {% if selected_team %}
-    <div class="stats-card">
-        <div class="stats-header">
-            <div class="d-flex align-items-center">
-                <img src="{{ team.logo_url }}" alt="{{ team.name }}" class="team-logo">
-                <div class="team-info">
-                    <h3>{{ team.name }}</h3>
-                    <p>{{ team.league.name }}</p>
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Select Team</h5>
                 </div>
-                <div class="ms-auto">
-                    <span class="ranking-badge">
-                        <i class="fas fa-trophy"></i>
-                        Rank #{{ team.league_position }}
-                    </span>
+                <div class="card-body">
+                    <form id="team-select-form">
+                        <div class="mb-3">
+                            <label for="sport" class="form-label">Sport</label>
+                            <select class="form-select" id="sport" name="sport">
+                                <option value="">Select Sport</option>
+                                {% for sport in sports %}
+                                <option value="{{ sport.id }}" {% if selected_sport == sport.id %}selected{% endif %}>
+                                    {{ sport.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="league" class="form-label">League</label>
+                            <select class="form-select" id="league" name="league">
+                                <option value="">Select League</option>
+                                {% for league in leagues %}
+                                <option value="{{ league.id }}" {% if selected_league == league.id %}selected{% endif %}>
+                                    {{ league.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="team" class="form-label">Team</label>
+                            <select class="form-select" id="team" name="team">
+                                <option value="">Select Team</option>
+                                {% for team_option in teams %}
+                                <option value="{{ team_option.id }}" {% if selected_team == team_option.id %}selected{% endif %}>
+                                    {{ team_option.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
-
-        <div class="stats-grid">
-            <div class="stat-box">
-                <div class="stat-value">{{ team.matches_played }}</div>
-                <div class="stat-label">Matches Played</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-value">{{ team.wins }}</div>
-                <div class="stat-label">Wins</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-value">{{ team.draws }}</div>
-                <div class="stat-label">Draws</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-value">{{ team.losses }}</div>
-                <div class="stat-label">Losses</div>
-            </div>
-        </div>
-
-        <div class="performance-section">
-            <div class="performance-header">
-                <h5 class="performance-title">Performance Metrics</h5>
-            </div>
-            <div class="progress-bar-wrapper">
-                <div class="progress-label">
-                    <span>Win Rate</span>
-                    <span>{{ team.win_rate }}%</span>
-                </div>
-                <div class="progress-custom">
-                    <div class="progress-fill" style="width: {{ team.win_rate }}%"></div>
-                </div>
-            </div>
-            <div class="progress-bar-wrapper">
-                <div class="progress-label">
-                    <span>Goals Scored</span>
-                    <span>{{ team.goals_scored }}</span>
-                </div>
-                <div class="progress-custom">
-                    <div class="progress-fill" style="width: {{ team.goals_percentage }}%"></div>
-                </div>
-            </div>
-            <div class="progress-bar-wrapper">
-                <div class="progress-label">
-                    <span>Clean Sheets</span>
-                    <span>{{ team.clean_sheets }}</span>
-                </div>
-                <div class="progress-custom">
-                    <div class="progress-fill" style="width: {{ team.clean_sheet_percentage }}%"></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="recent-matches">
-            <h5 class="mb-4">Recent Matches</h5>
-            {% for match in team.recent_matches %}
-            <div class="match-result">
-                <span class="result-badge {{ match.result.lower() }}">
-                    {{ match.result }}
-                </span>
-                <div class="match-info">
-                    <div class="match-teams">{{ match.opponent }}</div>
-                    <div class="match-date">
-                        <i class="far fa-calendar-alt me-2"></i>
-                        {{ match.score }} - {{ match.date.strftime('%d %b %Y') }}
+        
+        {% if team %}
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    {% if team.logo_url %}
+                    <img src="{{ team.logo_url }}" alt="{{ team.name }} logo" class="team-logo me-2" style="height: 40px;">
+                    {% endif %}
+                    <h4 class="mb-0">{{ team.name }}</h4>
+                    <div class="position-badge">
+                        <span class="badge bg-primary">Position: {{ team.league_position }}/{{ team.total_teams }}</span>
                     </div>
                 </div>
-            </div>
-            {% endfor %}
-        </div>
+                <div class="card-body">
+                    <!-- Key Stats -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="stat-card text-center">
+                                <h6>Points</h6>
+                                <h3>{{ team.points }}</h3>
+                                <small class="text-muted">
+                                    {% if team.points_from_top > 0 %}
+                                    {{ team.points_from_top }} from top
+                                    {% else %}
+                                    League Leaders
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card text-center">
+                                <h6>Form</h6>
+                                <div class="form-indicators">
+                                    {% for result in team.form %}
+                                    <span class="form-indicator {{ result }}">{{ result }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card text-center">
+                                <h6>Win Rate</h6>
+                                <h3>{{ "%.1f"|format(team.recent_stats.win_rate) }}%</h3>
+                                <small class="text-muted">Last 10 matches</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card text-center">
+                                <h6>Goal Difference</h6>
+                                <h3>{{ team.goal_difference }}</h3>
+                                <small class="text-muted">Season total</small>
+                            </div>
+                        </div>
+                    </div>
 
-        <div class="stats-footer">
-            <button class="btn btn-stats" onclick="showFullStats({{ team.id }})">
-                <i class="fas fa-chart-bar me-2"></i>View Full Statistics
-            </button>
+                    <!-- Performance Stats -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5>Performance Statistics</h5>
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Metric</th>
+                                            <th>Overall</th>
+                                            <th>Home</th>
+                                            <th>Away</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Goals Scored</td>
+                                            <td>{{ team.overall_stats.goals_scored }}</td>
+                                            <td>{{ team.home_stats.goals_scored }}</td>
+                                            <td>{{ team.away_stats.goals_scored }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Goals Conceded</td>
+                                            <td>{{ team.overall_stats.goals_conceded }}</td>
+                                            <td>{{ team.home_stats.goals_conceded }}</td>
+                                            <td>{{ team.away_stats.goals_conceded }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Goals per Game</td>
+                                            <td>{{ "%.2f"|format(team.overall_stats.goals_per_game) }}</td>
+                                            <td>{{ "%.2f"|format(team.home_stats.goals_per_game) }}</td>
+                                            <td>{{ "%.2f"|format(team.away_stats.goals_per_game) }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Conceded per Game</td>
+                                            <td>{{ "%.2f"|format(team.overall_stats.conceded_per_game) }}</td>
+                                            <td>{{ "%.2f"|format(team.home_stats.conceded_per_game) }}</td>
+                                            <td>{{ "%.2f"|format(team.away_stats.conceded_per_game) }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Form -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5>Recent Form</h5>
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Opponent</th>
+                                            <th>Score</th>
+                                            <th>Result</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for match in team.recent_matches %}
+                                        <tr>
+                                            <td>{{ match.date.strftime('%Y-%m-%d') }}</td>
+                                            <td>
+                                                {% if match.is_home %}
+                                                <i class="fas fa-home me-1"></i>
+                                                {% else %}
+                                                <i class="fas fa-plane me-1"></i>
+                                                {% endif %}
+                                                {{ match.opponent }}
+                                            </td>
+                                            <td>{{ match.score }}</td>
+                                            <td>
+                                                <span class="badge {% if match.result == 'WIN' %}bg-success{% elif match.result == 'DRAW' %}bg-warning{% else %}bg-danger{% endif %}">
+                                                    {{ match.result }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Next Match -->
+                    {% if team.next_match %}
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="next-match-card">
+                                <h5>Next Match</h5>
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <h6>{{ team.next_match.opponent }}</h6>
+                                        <small class="text-muted">
+                                            {% if team.next_match.is_home %}
+                                            <i class="fas fa-home me-1"></i> Home
+                                            {% else %}
+                                            <i class="fas fa-plane me-1"></i> Away
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                    <div class="text-end">
+                                        <h6>{{ team.next_match.date.strftime('%Y-%m-%d') }}</h6>
+                                        <small class="text-muted">{{ team.next_match.date.strftime('%H:%M') }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
         </div>
+        {% endif %}
     </div>
-    {% else %}
-    <div class="alert alert-info">
-        <i class="fas fa-info-circle me-2"></i>
-        Please select a team to view their statistics.
-    </div>
-    {% endif %}
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const sportSelect = document.getElementById('sport');
-        const leagueSelect = document.getElementById('league');
-        const teamSelect = document.getElementById('team');
+document.addEventListener('DOMContentLoaded', function() {
+    const sportSelect = document.getElementById('sport');
+    const leagueSelect = document.getElementById('league');
+    const teamSelect = document.getElementById('team');
 
-        sportSelect.addEventListener('change', function() {
-            const sportId = this.value;
-            // Reset other selects
-            leagueSelect.innerHTML = '<option value="">Select League</option>';
-            teamSelect.innerHTML = '<option value="">Select Team</option>';
-            
-            if (sportId) {
-                // Load leagues
-                fetch(`/get_leagues?sport_id=${sportId}`)
-                    .then(response => response.json())
-                    .then(leagues => {
-                        leagues.forEach(league => {
-                            leagueSelect.innerHTML += `<option value="${league.id}">${league.name}</option>`;
-                        });
+    sportSelect.addEventListener('change', function() {
+        const sportId = this.value;
+        // Reset other selects
+        leagueSelect.innerHTML = '<option value="">Select League</option>';
+        teamSelect.innerHTML = '<option value="">Select Team</option>';
+        
+        if (sportId) {
+            // Load leagues
+            fetch(`/get_leagues?sport_id=${sportId}`)
+                .then(response => response.json())
+                .then(leagues => {
+                    leagues.forEach(league => {
+                        leagueSelect.innerHTML += `<option value="${league.id}">${league.name}</option>`;
                     });
+                });
                 
-                // Load all teams for this sport
-                fetch(`/api/teams?sport_id=${sportId}`)
-                    .then(response => response.json())
-                    .then(teams => {
-                        teams.forEach(team => {
-                            teamSelect.innerHTML += `<option value="${team.id}">${team.name}</option>`;
-                        });
+            // Load all teams for this sport
+            fetch(`/api/teams?sport_id=${sportId}`)
+                .then(response => response.json())
+                .then(teams => {
+                    teams.forEach(team => {
+                        teamSelect.innerHTML += `<option value="${team.id}">${team.name}</option>`;
                     });
-            }
-        });
-
-        leagueSelect.addEventListener('change', function() {
-            const leagueId = this.value;
-            teamSelect.innerHTML = '<option value="">Select Team</option>';
-            
-            if (leagueId) {
-                fetch(`/api/teams?league_id=${leagueId}`)
-                    .then(response => response.json())
-                    .then(teams => {
-                        teams.forEach(team => {
-                            teamSelect.innerHTML += `<option value="${team.id}">${team.name}</option>`;
-                        });
-                    });
-            }
-        });
-
-        teamSelect.addEventListener('change', function() {
-            const teamId = this.value;
-            if (teamId) {
-                window.location.href = `/team-stats?team=${teamId}`;
-            }
-        });
-
-        // Progress bar animation
-        const progressBars = document.querySelectorAll('.progress-fill');
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const target = entry.target;
-                    const width = target.getAttribute('data-width');
-                    target.style.width = width + '%';
-                }
-            });
-        }, { threshold: 0.1 });
-
-        progressBars.forEach(bar => observer.observe(bar));
+                });
+        }
     });
 
-    function showFullStats(teamId) {
-        // Implement full statistics view
-        window.location.href = `/team/${teamId}/full-stats`;
-    }
+    leagueSelect.addEventListener('change', function() {
+        const leagueId = this.value;
+        teamSelect.innerHTML = '<option value="">Select Team</option>';
+        
+        if (leagueId) {
+            fetch(`/api/teams?league_id=${leagueId}`)
+                .then(response => response.json())
+                .then(teams => {
+                    teams.forEach(team => {
+                        teamSelect.innerHTML += `<option value="${team.id}">${team.name}</option>`;
+                    });
+                });
+        }
+    });
+
+    teamSelect.addEventListener('change', function() {
+        const teamId = this.value;
+        if (teamId) {
+            window.location.href = `/team-stats?team=${teamId}`;
+        }
+    });
+
+    // Progress bar animation
+    const progressBars = document.querySelectorAll('.progress-fill');
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const target = entry.target;
+                const width = target.getAttribute('data-width');
+                target.style.width = width + '%';
+            }
+        });
+    }, { threshold: 0.1 });
+
+    progressBars.forEach(bar => observer.observe(bar));
+});
 </script>
 {% endblock %}

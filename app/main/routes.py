@@ -7,32 +7,88 @@ from app.main import bp
 from app.models import User, Sport, League, Team, Match, News, Analysis, Prediction
 
 @bp.route('/')
-def landing():
-    """Landing page with live matches and platform statistics"""
-    if current_user.is_authenticated:
-        return redirect(url_for('main.index'))
+@login_required
+def index():
+    # Get user's predictions
+    user_predictions = Prediction.query.filter_by(user_id=current_user.id).all()
+    total_predictions = len(user_predictions)
+    correct_predictions = sum(1 for p in user_predictions if p.is_correct)
+    prediction_accuracy = (correct_predictions / total_predictions * 100) if total_predictions > 0 else 0
+    active_predictions = sum(1 for p in user_predictions if p.is_correct is None)
 
-    # Get platform statistics
-    total_matches = Match.query.count()
-    total_users = User.query.count()
-    total_predictions = Analysis.query.count()
+    # Get live matches
+    live_matches = Match.query.filter_by(status='live').order_by(Match.start_time.desc()).limit(5).all()
+
+    # Get upcoming matches
+    upcoming_matches = Match.query.filter_by(status='scheduled').order_by(Match.start_time).limit(5).all()
+
+    # Get league standings (sample data - replace with actual database query)
+    standings = [
+        {'name': 'Manchester City', 'played': 20, 'goal_difference': 35, 'points': 50},
+        {'name': 'Liverpool', 'played': 20, 'goal_difference': 28, 'points': 46},
+        {'name': 'Arsenal', 'played': 20, 'goal_difference': 22, 'points': 43},
+        {'name': 'Aston Villa', 'played': 20, 'goal_difference': 15, 'points': 42},
+        {'name': 'Tottenham', 'played': 20, 'goal_difference': 12, 'points': 39}
+    ]
+
+    # Get top performers (sample data - replace with actual database query)
+    top_performers = [
+        {'name': 'Erling Haaland', 'stats': '17 goals, 5 assists'},
+        {'name': 'Mohamed Salah', 'stats': '14 goals, 8 assists'},
+        {'name': 'Ollie Watkins', 'stats': '10 goals, 10 assists'},
+        {'name': 'Bukayo Saka', 'stats': '8 goals, 11 assists'},
+        {'name': 'Son Heung-min', 'stats': '12 goals, 5 assists'}
+    ]
+
+    # Get latest news (sample data - replace with actual database query)
+    latest_news = [
+        {
+            'date': '2024-01-15',
+            'title': 'Premier League Title Race Heats Up',
+            'excerpt': 'Manchester City and Liverpool set for thrilling title showdown as gap narrows to just 4 points.'
+        },
+        {
+            'date': '2024-01-14',
+            'title': 'Champions League Draw',
+            'excerpt': 'Exciting matchups revealed for Champions League knockout stages.'
+        },
+        {
+            'date': '2024-01-13',
+            'title': 'Transfer Window Updates',
+            'excerpt': 'Latest transfer news and rumors from the January transfer window.'
+        }
+    ]
+
+    # Get performance trend data (last 10 predictions)
+    recent_predictions = Prediction.query.filter_by(user_id=current_user.id)\
+        .order_by(Prediction.created_at.desc())\
+        .limit(10)\
+        .all()
     
-    # Get featured matches and news
-    featured_matches = Match.query.filter_by(status='live').order_by(Match.start_time.desc()).limit(6).all()
-    latest_news = News.query.order_by(News.created_at.desc()).limit(5).all()
-    trending_news = News.query.order_by(News.views.desc()).limit(5).all()
-    top_leagues = League.query.order_by(League.name).limit(5).all()
+    performance_dates = []
+    performance_accuracy = []
+    running_total = 0
+    running_correct = 0
     
-    return render_template('main/landing.html',
-        total_matches=total_matches,
-        total_users=total_users,
-        total_predictions=total_predictions,
-        featured_matches=featured_matches,
-        latest_news=latest_news,
-        trending_news=trending_news,
-        top_leagues=top_leagues,
-        now=datetime.utcnow()
-    )
+    for pred in reversed(recent_predictions):
+        running_total += 1
+        if pred.is_correct:
+            running_correct += 1
+        performance_dates.append(pred.created_at.strftime('%Y-%m-%d'))
+        performance_accuracy.append(round((running_correct / running_total) * 100, 1))
+
+    return render_template('main/index.html',
+                         total_predictions=total_predictions,
+                         correct_predictions=correct_predictions,
+                         prediction_accuracy=prediction_accuracy,
+                         active_predictions=active_predictions,
+                         live_matches=live_matches,
+                         upcoming_matches=upcoming_matches,
+                         standings=standings,
+                         top_performers=top_performers,
+                         latest_news=latest_news,
+                         performance_dates=performance_dates,
+                         performance_accuracy=performance_accuracy)
 
 @bp.route('/index')
 @login_required
@@ -959,44 +1015,54 @@ def team_stats():
     if team_id:
         selected_team = Team.query.get_or_404(team_id)
         
-        # Calculate team statistics
+        # Get enhanced statistics
+        form_stats = calculate_team_form(selected_team)
+        selected_team.form = form_stats['form_string']
+        selected_team.recent_stats = form_stats['last_10']
+        
+        league_stats = calculate_league_position_trend(selected_team)
+        selected_team.league_position = league_stats['position']
+        selected_team.total_teams = league_stats['total_teams']
+        selected_team.points = league_stats['points']
+        selected_team.points_from_top = league_stats['points_from_top']
+        selected_team.points_from_bottom = league_stats['points_from_bottom']
+        selected_team.goal_difference = league_stats['goal_difference']
+        
+        goal_stats = calculate_goal_statistics(selected_team)
+        selected_team.overall_stats = goal_stats['overall']
+        selected_team.home_stats = goal_stats['home']
+        selected_team.away_stats = goal_stats['away']
+        
+        # Get injury report
+        injury_report = get_injury_report(selected_team)
+        selected_team.injuries = injury_report
+        
+        # Get player statistics
+        player_stats = calculate_player_statistics(selected_team)
+        selected_team.top_scorers = player_stats['top_scorers']
+        selected_team.top_assists = player_stats['top_assists']
+        selected_team.minutes_leaders = player_stats['minutes_leaders']
+        
+        # Get performance trends
+        selected_team.trends = calculate_team_trends(selected_team)
+        
+        # Calculate goal scoring rate for progress bar
+        max_goals = 60  # Arbitrary maximum for progress bar
+        selected_team.goals_percentage = min(round((goal_stats['overall']['goals_scored'] / max_goals) * 100), 100)
+        selected_team.clean_sheet_percentage = round((goal_stats['overall']['clean_sheets'] / selected_team.overall_stats['goals_scored']) * 100 if selected_team.overall_stats['goals_scored'] > 0 else 0)
+        
+        # Get recent matches
         matches = Match.query.filter(
             or_(Match.home_team_id == team_id, Match.away_team_id == team_id)
         ).order_by(Match.start_time.desc()).all()
         
-        # Add basic statistics
-        selected_team.matches_played = len(matches)
-        selected_team.wins = sum(1 for m in matches if 
-            (m.home_team_id == team_id and m.home_score > m.away_score) or
-            (m.away_team_id == team_id and m.away_score > m.home_score))
-        selected_team.draws = sum(1 for m in matches if m.home_score == m.away_score)
-        selected_team.losses = selected_team.matches_played - selected_team.wins - selected_team.draws
-        
-        # Calculate percentages and advanced stats
-        selected_team.win_rate = round((selected_team.wins / selected_team.matches_played) * 100 if selected_team.matches_played > 0 else 0)
-        selected_team.form = calculate_team_form(selected_team)
-        selected_team.position_trend = calculate_league_position_trend(selected_team)
-        selected_team.injuries = get_injury_report(selected_team)
-        
-        # Get goal statistics
-        goal_stats = calculate_goal_statistics(selected_team)
-        selected_team.goals_scored = goal_stats['goals_scored']
-        selected_team.goals_conceded = goal_stats['goals_conceded']
-        selected_team.clean_sheets = goal_stats['clean_sheets']
-        selected_team.failed_to_score = goal_stats['failed_to_score']
-        
-        # Calculate goal scoring rate for progress bar
-        max_goals = 60  # Arbitrary maximum for progress bar
-        selected_team.goals_percentage = min(round((goal_stats['goals_scored'] / max_goals) * 100), 100)
-        selected_team.clean_sheet_percentage = round((goal_stats['clean_sheets'] / selected_team.matches_played) * 100 if selected_team.matches_played > 0 else 0)
-        
-        # Get recent matches
         selected_team.recent_matches = []
         for match in matches[:5]:  # Last 5 matches
             result = {}
             if match.home_team_id == team_id:
                 result['opponent'] = match.away_team.name
                 result['score'] = f"{match.home_score}-{match.away_score}"
+                result['is_home'] = True
                 if match.home_score > match.away_score:
                     result['result'] = 'WIN'
                 elif match.home_score < match.away_score:
@@ -1006,6 +1072,7 @@ def team_stats():
             else:
                 result['opponent'] = match.home_team.name
                 result['score'] = f"{match.away_score}-{match.home_score}"
+                result['is_home'] = False
                 if match.away_score > match.home_score:
                     result['result'] = 'WIN'
                 elif match.away_score < match.home_score:
@@ -1014,6 +1081,19 @@ def team_stats():
                     result['result'] = 'DRAW'
             result['date'] = match.start_time
             selected_team.recent_matches.append(result)
+        
+        # Get next match
+        next_match = Match.query.filter(
+            or_(Match.home_team_id == team_id, Match.away_team_id == team_id),
+            Match.status == 'scheduled'
+        ).order_by(Match.start_time).first()
+        
+        if next_match:
+            selected_team.next_match = {
+                'opponent': next_match.away_team.name if next_match.home_team_id == team_id else next_match.home_team.name,
+                'date': next_match.start_time,
+                'is_home': next_match.home_team_id == team_id
+            }
     
     return render_template('main/team_stats.html',
                          sports=Sport.query.all(),
@@ -1357,3 +1437,69 @@ def calculate_goal_statistics(team):
             'conceded_per_game': away_goals_conceded / len(away_matches) if away_matches else 0
         }
     }
+
+def get_injury_report(team):
+    """Get team's injury report with detailed status"""
+    # For now, return a placeholder injury report
+    # In a real application, this would fetch from a database
+    return {
+        'total_injuries': 0,
+        'players': [],
+        'summary': {
+            'short_term': 0,  # Out for less than 2 weeks
+            'medium_term': 0,  # Out for 2-6 weeks
+            'long_term': 0,    # Out for more than 6 weeks
+        }
+    }
+
+def calculate_player_statistics(team):
+    """Calculate detailed player statistics for the team"""
+    # In a real application, this would fetch from a database
+    # For now, return sample data
+    return {
+        'top_scorers': [
+            {'name': 'John Smith', 'goals': 12, 'assists': 5, 'minutes_played': 1520},
+            {'name': 'Mike Johnson', 'goals': 8, 'assists': 7, 'minutes_played': 1350},
+            {'name': 'David Wilson', 'goals': 6, 'assists': 3, 'minutes_played': 1200}
+        ],
+        'top_assists': [
+            {'name': 'Tom Brown', 'assists': 9, 'goals': 2, 'minutes_played': 1400},
+            {'name': 'Mike Johnson', 'assists': 7, 'goals': 8, 'minutes_played': 1350},
+            {'name': 'James Davis', 'assists': 6, 'goals': 1, 'minutes_played': 1100}
+        ],
+        'minutes_leaders': [
+            {'name': 'John Smith', 'minutes_played': 1520, 'goals': 12, 'assists': 5},
+            {'name': 'Tom Brown', 'minutes_played': 1400, 'goals': 2, 'assists': 9},
+            {'name': 'Mike Johnson', 'minutes_played': 1350, 'goals': 8, 'assists': 7}
+        ]
+    }
+
+def calculate_team_trends(team):
+    """Calculate team performance trends"""
+    matches = Match.query.filter(
+        or_(Match.home_team_id == team.id, Match.away_team_id == team.id),
+        Match.status == 'finished'
+    ).order_by(Match.start_time.desc()).limit(10).all()
+    
+    trends = {
+        'goals_scored': [],
+        'goals_conceded': [],
+        'possession': [],
+        'shots_on_target': [],
+        'dates': []
+    }
+    
+    for match in matches:
+        if match.home_team_id == team.id:
+            trends['goals_scored'].append(match.home_score)
+            trends['goals_conceded'].append(match.away_score)
+            trends['possession'].append(match.home_possession or 50)
+            trends['shots_on_target'].append(match.home_shots_on_target or 0)
+        else:
+            trends['goals_scored'].append(match.away_score)
+            trends['goals_conceded'].append(match.home_score)
+            trends['possession'].append(match.away_possession or 50)
+            trends['shots_on_target'].append(match.away_shots_on_target or 0)
+        trends['dates'].append(match.start_time.strftime('%Y-%m-%d'))
+    
+    return trends
