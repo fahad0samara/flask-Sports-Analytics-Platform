@@ -136,18 +136,24 @@ def matches():
         query = query.filter(Match.status == status)
 
     # Apply date filter
-    today = datetime.utcnow().date()
+    today = datetime.now().date()
+    tomorrow = today + timedelta(days=1)
     if date_filter == 'today':
         query = query.filter(
-            func.date(Match.start_time) == today
+            and_(
+                func.date(Match.start_time) >= today,
+                func.date(Match.start_time) < tomorrow
+            )
         )
     elif date_filter == 'tomorrow':
-        tomorrow = today + datetime.timedelta(days=1)
         query = query.filter(
-            func.date(Match.start_time) == tomorrow
+            and_(
+                func.date(Match.start_time) >= tomorrow,
+                func.date(Match.start_time) < tomorrow + timedelta(days=1)
+            )
         )
     elif date_filter == 'week':
-        week_end = today + datetime.timedelta(days=7)
+        week_end = today + timedelta(days=7)
         query = query.filter(
             func.date(Match.start_time).between(today, week_end)
         )
